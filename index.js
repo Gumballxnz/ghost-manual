@@ -283,7 +283,7 @@ async function connectSocket() {
           console.error(`Erro ao salvar número no config.json:`, e.message)
         }
       } else if (!phoneNumber) {
-        console.log(`\n❌ Nenhum número fornecido. Usando o método QR Code como fallback...\n`)
+        console.log(`\n❌ Nenhum número fornecido. Alternando para o método QR Code...\n`)
         method = '1'
       }
     }
