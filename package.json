@@ -4,8 +4,7 @@
   "description": "WhatsApp Group Moderation & Manual Airtime/Megas Management Bot built with Baileys",
   "main": "index.js",
   "bin": {
-    "ghost-manual": "./bin/cli.js",
-    "@gumballwotersan/ghost-manual": "./bin/cli.js"
+    "ghost-manual": "./bin/cli.js"
   },
   "publishConfig": {
     "access": "public"
