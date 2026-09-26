@@ -210,33 +210,6 @@ module.exports = async function (sock, msg) {
     }
   }
 
-  if (isGroup && !isOwner) {
-    try {
-      const configMgr = require('../utils/configManager')
-      const groupConfig = configMgr.loadGroupConfig()
-
-      const grupoInfo = groupConfig[from] || groupConfig[from.replace(/\./g, '___dot___')] || groupConfig[from.replace(/___dot___/g, '.')] || {}
-      const { getGrupoConfig } = require('../vendas/gruposConfig')
-      const gVendasCfg = getGrupoConfig(from)
-      const hasCentral = !!(gVendasCfg && (gVendasCfg.apiKey || gVendasCfg.centralCode))
-      const isAuthorized = (grupoInfo.authorized === true) || (grupoInfo.authorized !== false && hasCentral)
-
-      if (!isAuthorized) {
-        return
-      }
-
-      if (grupoInfo.expiraEm) {
-        const now = new Date()
-        const offset = 2 * 60
-        const utc = now.getTime() + (now.getTimezoneOffset() * 60000)
-        const agoraMocambique = utc + (offset * 60000)
-
-        if (agoraMocambique >= grupoInfo.expiraEm) {
-          return
-        }
-      }
-    } catch { }
-  }
 
   if (isGroup && !isOwner) {
     try {
@@ -826,10 +799,9 @@ module.exports = async function (sock, msg) {
     const configMgr = require('../utils/configManager')
     const groupConfig = configMgr.loadGroupConfig()
     const grupoInfo = groupConfig[from] || groupConfig[from.replace(/\./g, '___dot___')] || groupConfig[from.replace(/___dot___/g, '.')] || {}
-    const { getGrupoConfig } = require('../vendas/gruposConfig')
-    const gVendasCfg = getGrupoConfig(from)
-    const hasCentral = !!(gVendasCfg && (gVendasCfg.apiKey || gVendasCfg.centralCode))
-    const isAuthorized = (grupoInfo.authorized === true) || (grupoInfo.authorized !== false && hasCentral)
+    const { getDataMocambique } = require('../utils/timezone')
+    const agoraMz = getDataMocambique().getTime()
+    const isAuthorized = (grupoInfo.authorized === true) && (!grupoInfo.expiraEm || agoraMz < grupoInfo.expiraEm)
 
     if (isAuthorized) {
       const currentPrefix = configMgr.getPrefixForChat(from)

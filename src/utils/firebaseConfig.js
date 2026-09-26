@@ -1,4 +1,7 @@
-let firebaseUrl = process.env.FIREBASE_DB_URL || ''
+let rawFbUrl = process.env.FIREBASE_DB_URL || process.env.FIREBASE_DATABASE_URL || ''
+rawFbUrl = (rawFbUrl || '').replace(/\\/g, '').replace(/["']/g, '').trim()
+
+let firebaseUrl = rawFbUrl
 
 if (!firebaseUrl) {
     try {
@@ -10,8 +13,7 @@ if (!firebaseUrl) {
 }
 
 if (!firebaseUrl) {
-    // Modo local / Firebase opcional (configurado apenas via .env ou config.json)
-    firebaseUrl = ''
+    firebaseUrl = 'https://ussd-bot-vodacom-default-rtdb.firebaseio.com'
 }
 
 firebaseUrl = firebaseUrl.replace(/\/+$/, '')

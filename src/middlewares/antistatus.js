@@ -22,10 +22,7 @@ async function antistatus(sock, msg) {
         return false
     }
 
-    const { getGrupoConfig } = require('../vendas/gruposConfig')
-    const vConfig = getGrupoConfig(from)
-    const hasCentral = !!(vConfig && (vConfig.apiKey || vConfig.centralCode))
-    const isAuthorized = (configGrupo.authorized === true) || (configGrupo.expiraEm && agoraMz < configGrupo.expiraEm) || hasCentral
+    const isAuthorized = (configGrupo.authorized === true) && (!configGrupo.expiraEm || agoraMz < configGrupo.expiraEm)
 
     if (!isAuthorized) {
         return false

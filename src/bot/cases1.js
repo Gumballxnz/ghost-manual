@@ -142,15 +142,16 @@ module.exports = async function (sock, msg) {
         const grupoInfo = groupConfig[from] || groupConfig[from.replace(/\./g, '___dot___')] || groupConfig[from.replace(/___dot___/g, '.')] || {}
 
         const isConfigCmd = text.startsWith(config.prefix + 'aluguel') ||
+            text.startsWith(config.prefix + 'ativarlicenca') ||
+            text.startsWith(config.prefix + 'renovar') ||
             text.startsWith(config.prefix + 'entrar') ||
             text.startsWith(config.prefix + 'sair') ||
-            text.startsWith('ghost-') ||
+            text.toLowerCase().startsWith('ghost-') ||
             text === config.prefix + 'bot'
 
-        const { getGrupoConfig } = require('../vendas/gruposConfig')
-        const gVendasCfg = getGrupoConfig(from)
-        const hasCentral = !!(gVendasCfg && (gVendasCfg.apiKey || gVendasCfg.centralCode))
-        const isGroupAuthorized = (grupoInfo?.authorized === true) || (grupoInfo?.authorized !== false && hasCentral)
+        const { getDataMocambique } = require('../utils/timezone')
+        const agoraMz = getDataMocambique().getTime()
+        const isGroupAuthorized = (grupoInfo?.authorized === true) && (!grupoInfo?.expiraEm || agoraMz < grupoInfo?.expiraEm)
 
         if (!isGroupAuthorized && !isConfigCmd) {
             return true
@@ -296,10 +297,9 @@ module.exports = async function (sock, msg) {
         const configMgr = require('../utils/configManager')
         const groupConfig = configMgr.loadGroupConfig()
         const grupoInfo = groupConfig[from] || groupConfig[from.replace(/\./g, '___dot___')] || groupConfig[from.replace(/___dot___/g, '.')] || {}
-        const { getGrupoConfig } = require('../vendas/gruposConfig')
-        const gVendasCfg = getGrupoConfig(from)
-        const hasCentral = !!(gVendasCfg && (gVendasCfg.apiKey || gVendasCfg.centralCode))
-        const isAuthorized = (grupoInfo.authorized === true) || (grupoInfo.authorized !== false && hasCentral)
+        const { getDataMocambique } = require('../utils/timezone')
+        const agoraMz = getDataMocambique().getTime()
+        const isAuthorized = (grupoInfo.authorized === true) && (!grupoInfo.expiraEm || agoraMz < grupoInfo.expiraEm)
 
         if (isAuthorized) {
             const currentPrefix = configMgr.getPrefixForChat(from)
