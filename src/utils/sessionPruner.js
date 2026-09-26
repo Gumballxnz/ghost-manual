@@ -7,9 +7,15 @@ async function limparArquivosSessao(sessionDir = './session') {
         const credsPath = path.join(sessionDir, 'creds.json')
         if (!fs.existsSync(credsPath)) return
 
-        const credsRaw = await fs.promises.readFile(credsPath, 'utf8')
-        const creds = JSON.parse(credsRaw)
-        const nextPreKeyId = Number(creds.nextPreKeyId || creds.firstUnuploadedPreKeyId)
+        let credsRaw
+        try {
+            credsRaw = await fs.promises.readFile(credsPath, 'utf8')
+        } catch { return }
+        let creds
+        try {
+            creds = JSON.parse(credsRaw)
+        } catch { return }
+        const nextPreKeyId = Number(creds?.nextPreKeyId || creds?.firstUnuploadedPreKeyId)
         if (!nextPreKeyId || isNaN(nextPreKeyId)) return
 
         // Manter com segurança as últimas 150 pre-keys antes do nextPreKeyId
