@@ -1632,7 +1632,7 @@ _Dados desde o início do registro_`
       }
 
       const { buscarEntregaPendentePorCliente, buscarEntregaPendentePorCodigo, consumirEntregaPendente } = require('./entregasPendentes')
-      const { registrarEntregaRecibo } = require('../vendas/recibos')
+      const { registrarEntregaRecibo, marcarReciboUsado } = require('../vendas/recibos')
 
       const sessaoRecibo = getSessao(mentionId)
       let entregaPendente = buscarEntregaPendentePorCliente(from, mentionId)
@@ -1852,7 +1852,7 @@ _Dados desde o início do registro_`
       const pacoteStr = `${valor}MT Saldo`
 
       const { buscarEntregaPendentePorCliente, buscarEntregaPendentePorCodigo, consumirEntregaPendente } = require('./entregasPendentes')
-      const { registrarEntregaRecibo } = require('../vendas/recibos')
+      const { registrarEntregaRecibo, marcarReciboUsado } = require('../vendas/recibos')
 
       const sessaoRecibo = getSessao(mentionId)
       let entregaPendente = buscarEntregaPendentePorCliente(from, mentionId)
