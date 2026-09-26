@@ -1,0 +1,44 @@
+node_modules
+session/
+session-backup/
+session-*/
+auth_info_baileys/
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.key.pub
+ssh-key-*
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+*.pfx
+*.p12
+*.apk
+*.log
+.DS_Store
+.agent/
+.agents/
+MEMORIA_PROJETO.md
+VPS_INFO.md
+
+# Logs e arquivos globais
+logs/
+*.json
+!package.json
+!package-lock.json
+
+# Segredos de Firebase e Configs
+*firebase-adminsdk*.json
+*serviceAccount*.json
+*credentials*.json
+
+# Estrutura de pastas permitidas
+data/
+!data/
+data/*
+!data/.gitkeep
+!data/config.example.json
+!scripts/.gitkeep
