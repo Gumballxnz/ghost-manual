@@ -40,7 +40,6 @@
     "@resvg/resvg-js": "^2.6.2",
     "@whiskeysockets/baileys": "^6.7.21",
     "axios": "^1.10.0",
-    "dotenv": "^16.4.5",
     "jimp": "0.16.1",
     "pdfkit": "^0.19.1",
     "pino": "^8.19.0",

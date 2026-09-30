@@ -93,12 +93,6 @@ ${C.magenta}╭─────────────────────�
     fs.writeFileSync(configPath, JSON.stringify(configData, null, 2), 'utf8')
     console.log(`\n${C.green}✅ Arquivo data/config.json configurado com sucesso!${C.reset}`)
 
-    const envPath = path.join(__dirname, '.env')
-    const envExamplePath = path.join(__dirname, '.env.example')
-    if (!fs.existsSync(envPath) && fs.existsSync(envExamplePath)) {
-      fs.copyFileSync(envExamplePath, envPath)
-      console.log(`${C.green}✅ Arquivo .env gerado a partir de .env.example!${C.reset}`)
-    }
 
     // ==========================================
     // ETAPA 2: CONEXÃO COM O WHATSAPP

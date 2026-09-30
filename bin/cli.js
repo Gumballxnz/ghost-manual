@@ -19,15 +19,6 @@ if (!fs.existsSync(configPath) && !fs.existsSync(localConfigPath)) {
   }
 }
 
-const envPath = path.resolve(process.cwd(), '.env')
-const localEnvPath = path.resolve(__dirname, '../.env')
-if (!fs.existsSync(envPath) && !fs.existsSync(localEnvPath)) {
-  const exampleEnv = path.resolve(__dirname, '../.env.example')
-  if (fs.existsSync(exampleEnv)) {
-    fs.copyFileSync(exampleEnv, envPath)
-    console.log('\x1b[32m[GHOST-MANUAL]\x1b[0m Arquivo .env gerado a partir de .env.example!')
-  }
-}
 
 // Inicia o bot
 require('../index.js')

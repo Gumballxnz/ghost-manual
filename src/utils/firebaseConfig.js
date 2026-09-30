@@ -1,16 +1,11 @@
-let rawFbUrl = process.env.FIREBASE_DB_URL || process.env.FIREBASE_DATABASE_URL || ''
-rawFbUrl = (rawFbUrl || '').replace(/\\/g, '').replace(/["']/g, '').trim()
+let firebaseUrl = ''
 
-let firebaseUrl = rawFbUrl
-
-if (!firebaseUrl) {
-    try {
-        const config = require('../../data/config.json')
-        if (config && config.firebaseUrl && !config.firebaseUrl.includes('seu-projeto')) {
-            firebaseUrl = config.firebaseUrl
-        }
-    } catch {}
-}
+try {
+    const config = require('../../data/config.json')
+    if (config && config.firebaseUrl && !config.firebaseUrl.includes('seu-projeto')) {
+        firebaseUrl = String(config.firebaseUrl).trim()
+    }
+} catch {}
 
 firebaseUrl = firebaseUrl.replace(/\/+$/, '')
 const firebaseHost = firebaseUrl.replace(/^https?:\/\//, '')

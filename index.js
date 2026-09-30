@@ -1,5 +1,3 @@
-require('dotenv').config()
-
 process.env.OMP_NUM_THREADS = '1'
 process.env.OMP_THREAD_LIMIT = '1'
 
