@@ -58,31 +58,29 @@ module.exports = async (sock, msg, from, sender, text) => {
             const grupoInfo = groups[from] || groups[from.replace(/\./g, '___dot___')] || groups[from.replace(/___dot___/g, '.')] || {}
             const agora = getDataMocambique().getTime()
 
-            let tempoGrupo = ''
+            let aluguelStatus = 'off'
             const isGroupAuth = grupoInfo.authorized === true
-
-            if (!isGroupAuth) {
-                tempoGrupo = '❌ *Grupo Não Autorizado* (Aguardando ativação do Dono)'
-            } else if (grupoInfo.expiraEm) {
-                const restante = grupoInfo.expiraEm - agora
-                if (restante > 0) {
-                    tempoGrupo = `${formatarTempoRestante(restante)}`
+            if (isGroupAuth) {
+                if (grupoInfo.expiraEm) {
+                    const restante = grupoInfo.expiraEm - agora
+                    aluguelStatus = restante > 0 ? `on (${formatarTempoRestante(restante)})` : 'expirado'
                 } else {
-                    tempoGrupo = '⚠️ *Tempo Expirado*'
+                    aluguelStatus = 'on'
                 }
             } else {
-                tempoGrupo = '♾️ *Permanente*'
+                aluguelStatus = 'off'
             }
 
-            linhasCorpo.push(`•.̇𖥨֗👻⭟ 👥 *Aluguel do Grupo:* ${tempoGrupo}`)
-            linhasCorpo.push(`•.̇𖥨֗👻⭟ 🤖 *Modo de Vendas:* ⚪ *100% Manual*`)
+            const botStatus = grupoInfo.botDesligado ? 'off' : 'on'
+
+            linhasCorpo.push(`•.̇𖥨֗👻⭟ 👥 *Aluguel:* ${aluguelStatus}`)
+            linhasCorpo.push('')
+            linhasCorpo.push(`•.̇𖥨֗👻⭟ 🟢 *Status:* ${botStatus}`)
         } else {
             linhasCorpo.push(`•.̇𖥨֗👻⭟ 👑 *Painel Central do Dono*`)
+            linhasCorpo.push('')
+            linhasCorpo.push(`•.̇𖥨֗👻⭟ 🟢 *Status:* on`)
         }
-
-        linhasCorpo.push('')
-        linhasCorpo.push('•.̇𖥨֗👻⭟ 🟢 *Status:* Sistema Operacional')
-        linhasCorpo.push('•.̇𖥨֗👻⭟ ⚡ *Atendimento:* Fila Imediata')
 
         const cardBot = [
             `╭┈⊰ 👻 『 *${botTitle} ONLINE* 』`,
