@@ -27,7 +27,6 @@ module.exports = async (sock, msg, from) => {
         '┊',
         `┊•.̇𖥨֗👻⭟${prefix}infogp`,
         `┊•.̇𖥨֗👻⭟${prefix}perfil`,
-        `┊•.̇𖥨֗👻⭟${prefix}s (Criar Figurinha)`,
         '╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯'
     ].join('\n')
 
