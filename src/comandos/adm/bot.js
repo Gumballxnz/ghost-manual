@@ -59,25 +59,38 @@ module.exports = async (sock, msg, from, sender, text) => {
             const agora = getDataMocambique().getTime()
 
             let aluguelStatus = 'off'
+            let diasRestantes = '0'
             const isGroupAuth = grupoInfo.authorized === true
             if (isGroupAuth) {
                 if (grupoInfo.expiraEm) {
                     const restante = grupoInfo.expiraEm - agora
-                    aluguelStatus = restante > 0 ? `on (${formatarTempoRestante(restante)})` : 'expirado'
+                    if (restante > 0) {
+                        aluguelStatus = 'on'
+                        const dias = Math.ceil(restante / (24 * 60 * 60 * 1000))
+                        diasRestantes = `${dias} dia${dias > 1 ? 's' : ''}`
+                    } else {
+                        aluguelStatus = 'off'
+                        diasRestantes = '0'
+                    }
                 } else {
                     aluguelStatus = 'on'
+                    diasRestantes = 'Vitalício'
                 }
             } else {
                 aluguelStatus = 'off'
+                diasRestantes = '0'
             }
 
             const botStatus = grupoInfo.botDesligado ? 'off' : 'on'
 
             linhasCorpo.push(`•.̇𖥨֗👻⭟ 👥 *Aluguel:* ${aluguelStatus}`)
+            linhasCorpo.push(`•.̇𖥨֗👻⭟ ⏳ *Dias restantes:* ${diasRestantes}`)
             linhasCorpo.push('')
             linhasCorpo.push(`•.̇𖥨֗👻⭟ 🟢 *Status:* ${botStatus}`)
         } else {
             linhasCorpo.push(`•.̇𖥨֗👻⭟ 👑 *Painel Central do Dono*`)
+            linhasCorpo.push(`•.̇𖥨֗👻⭟ 👥 *Aluguel:* on`)
+            linhasCorpo.push(`•.̇𖥨֗👻⭟ ⏳ *Dias restantes:* Vitalício`)
             linhasCorpo.push('')
             linhasCorpo.push(`•.̇𖥨֗👻⭟ 🟢 *Status:* on`)
         }
