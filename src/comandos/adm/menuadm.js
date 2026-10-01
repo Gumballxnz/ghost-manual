@@ -39,72 +39,72 @@ module.exports = async (sock, msg, from, sender, text) => {
     ].join('\n')
 
     const bloco1 = [
-        '╭┈❁ *📊 TABELAS & PREÇOS*',
+        '╭┈❁ *📊 TABELAS & PREÇOS (A-Z)*',
         '┊',
-        `┊•.̇𖥨֗👻⭟${prefix}configurar tabela`,
-        `┊•.̇𖥨֗👻⭟${prefix}configurar saldo`,
-        `┊•.̇𖥨֗👻⭟${prefix}configurar ver tabela`,
-        `┊•.̇𖥨֗👻⭟${prefix}configurar ver saldo`,
         `┊•.̇𖥨֗👻⭟${prefix}configurar listar`,
+        `┊•.̇𖥨֗👻⭟${prefix}configurar saldo`,
+        `┊•.̇𖥨֗👻⭟${prefix}configurar tabela`,
+        `┊•.̇𖥨֗👻⭟${prefix}configurar ver saldo`,
+        `┊•.̇𖥨֗👻⭟${prefix}configurar ver tabela`,
         `┊•.̇𖥨֗👻⭟${prefix}tabela`,
         `┊•.̇𖥨֗👻⭟${prefix}tabelasaldo`,
         '╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯'
     ].join('\n')
 
     const bloco2 = [
-        '╭┈❁ *📦 GESTÃO DE VENDAS*',
+        '╭┈❁ *📦 GESTÃO DE VENDAS (A-Z)*',
         '┊',
+        `┊•.̇𖥨֗👻⭟${prefix}aumentarlimite`,
         `┊•.̇𖥨֗👻⭟${prefix}compras`,
         `┊•.̇𖥨֗👻⭟${prefix}limparcompras`,
         `┊•.̇𖥨֗👻⭟${prefix}recuperarcompras`,
-        `┊•.̇𖥨֗👻⭟${prefix}aumentarlimite`,
         '╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯'
     ].join('\n')
 
     const bloco3 = [
-        '╭┈❁ *🛡️ SEGURANÇA & PROTEÇÃO*',
+        '╭┈❁ *🛡️ SEGURANÇA & PROTEÇÃO (A-Z)*',
         '┊',
-        `┊•.̇𖥨֗👻⭟${prefix}antilink [on/off]`,
-        `┊•.̇𖥨֗👻⭟${prefix}antibot [on/off]`,
-        `┊•.̇𖥨֗👻⭟${prefix}antifoto [on/off]`,
         `┊•.̇𖥨֗👻⭟${prefix}antiaudio [on/off]`,
-        `┊•.̇𖥨֗👻⭟${prefix}antivideo [on/off]`,
+        `┊•.̇𖥨֗👻⭟${prefix}antibot [on/off]`,
         `┊•.̇𖥨֗👻⭟${prefix}antidoc [on/off]`,
-        `┊•.̇𖥨֗👻⭟${prefix}antimidia [on/off]`,
         `┊•.̇𖥨֗👻⭟${prefix}antiflood [on/off]`,
-        `┊•.̇𖥨֗👻⭟${prefix}antipalavrao [on/off]`,
+        `┊•.̇𖥨֗👻⭟${prefix}antifoto [on/off]`,
         `┊•.̇𖥨֗👻⭟${prefix}antigringo [on/off]`,
+        `┊•.̇𖥨֗👻⭟${prefix}antilink [on/off]`,
+        `┊•.̇𖥨֗👻⭟${prefix}antimidia [on/off]`,
+        `┊•.̇𖥨֗👻⭟${prefix}antipalavrao [on/off]`,
+        `┊•.̇𖥨֗👻⭟${prefix}antivideo [on/off]`,
         `┊•.̇𖥨֗👻⭟${prefix}concorrentes [on/off]`,
         `┊•.̇𖥨֗👻⭟${prefix}copiarprotecoes`,
         '╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯'
     ].join('\n')
 
     const bloco4 = [
-        '╭┈❁ *👥 GESTÃO DO GRUPO*',
+        '╭┈❁ *👥 GESTÃO DO GRUPO (A-Z)*',
         '┊',
-        `┊•.̇𖥨֗👻⭟${prefix}grupo [abrir/fechar]`,
         `┊•.̇𖥨֗👻⭟${prefix}alarme`,
-        `┊•.̇𖥨֗👻⭟${prefix}bemvindo [on/off]`,
-        `┊•.̇𖥨֗👻⭟${prefix}x9 [on/off]`,
-        `┊•.̇𖥨֗👻⭟${prefix}ban @membro`,
-        `┊•.̇𖥨֗👻⭟${prefix}mute [minutos]`,
-        `┊•.̇𖥨֗👻⭟${prefix}unmute`,
-        `┊•.̇𖥨֗👻⭟${prefix}todos [texto]`,
         `┊•.̇𖥨֗👻⭟${prefix}aviso [texto]`,
-        `┊•.̇𖥨֗👻⭟${prefix}linkgp`,
+        `┊•.̇𖥨֗👻⭟${prefix}ban @membro`,
+        `┊•.̇𖥨֗👻⭟${prefix}bemvindo [on/off]`,
+        `┊•.̇𖥨֗👻⭟${prefix}grupo [abrir/fechar]`,
         `┊•.̇𖥨֗👻⭟${prefix}infogp`,
         `┊•.̇𖥨֗👻⭟${prefix}limpar`,
+        `┊•.̇𖥨֗👻⭟${prefix}linkgp`,
+        `┊•.̇𖥨֗👻⭟${prefix}mute [minutos]`,
         `┊•.̇𖥨֗👻⭟${prefix}prefixo [novo]`,
+        `┊•.̇𖥨֗👻⭟${prefix}todos [texto]`,
+        `┊•.̇𖥨֗👻⭟${prefix}unmute`,
+        `┊•.̇𖥨֗👻⭟${prefix}x9 [on/off]`,
         '╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯'
     ].join('\n')
 
     const bloco5 = [
-        '╭┈❁ *🔑 LICENÇA & CONFIGURAÇÕES*',
+        '╭┈❁ *🔑 LICENÇA & CONFIGURAÇÕES (A-Z)*',
         '┊',
         `┊•.̇𖥨֗👻⭟${prefix}ativarlicenca [chave]`,
-        `┊•.̇𖥨֗👻⭟${prefix}renovar`,
         `┊•.̇𖥨֗👻⭟${prefix}bot [on/off]`,
         `┊•.̇𖥨֗👻⭟${prefix}ping`,
+        `┊•.̇𖥨֗👻⭟${prefix}renovar`,
         '╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯'
     ].join('\n')
 

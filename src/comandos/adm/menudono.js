@@ -22,38 +22,38 @@ module.exports = async (sock, msg, from, sender, text) => {
         ].join('\n');
 
         const bloco1 = [
-            '╭┈❁ *👑 CONTROLE GLOBAL*',
+            '╭┈❁ *👑 CONTROLE GLOBAL (A-Z)*',
             '┊',
-            `┊•.̇𖥨֗👻⭟${prefix}onall (Ativar Global)`,
+            `┊•.̇𖥨֗👻⭟${prefix}off (Desativar Grupo)`,
             `┊•.̇𖥨֗👻⭟${prefix}offall (Desativar Global)`,
             `┊•.̇𖥨֗👻⭟${prefix}on (Ativar Grupo)`,
-            `┊•.̇𖥨֗👻⭟${prefix}off (Desativar Grupo)`,
-            `┊•.̇𖥨֗👻⭟${prefix}status`,
+            `┊•.̇𖥨֗👻⭟${prefix}onall (Ativar Global)`,
             `┊•.̇𖥨֗👻⭟${prefix}prefixoglobal`,
+            `┊•.̇𖥨֗👻⭟${prefix}status`,
             `┊•.̇𖥨֗👻⭟${prefix}subdono [add/remove]`,
             '╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯'
         ].join('\n');
 
         const bloco2 = [
-            '╭┈❁ *🔌 GESTÃO DE GRUPOS & ALUGUEL*',
+            '╭┈❁ *🔌 GESTÃO DE GRUPOS & ALUGUEL (A-Z)*',
             '┊',
-            `┊•.̇𖥨֗👻⭟${prefix}grupos`,
             `┊•.̇𖥨֗👻⭟${prefix}aluguel`,
-            `┊•.̇𖥨֗👻⭟${prefix}renovar`,
-            `┊•.̇𖥨֗👻⭟${prefix}delgrupo`,
-            `┊•.̇𖥨֗👻⭟${prefix}remover aluguel`,
             `┊•.̇𖥨֗👻⭟${prefix}bcast`,
-            `┊•.̇𖥨֗👻⭟${prefix}grupoall`,
+            `┊•.̇𖥨֗👻⭟${prefix}delgrupo`,
             `┊•.̇𖥨֗👻⭟${prefix}entrar`,
+            `┊•.̇𖥨֗👻⭟${prefix}grupoall`,
+            `┊•.̇𖥨֗👻⭟${prefix}grupos`,
+            `┊•.̇𖥨֗👻⭟${prefix}remover aluguel`,
+            `┊•.̇𖥨֗👻⭟${prefix}renovar`,
             `┊•.̇𖥨֗👻⭟${prefix}sair`,
             '╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯'
         ].join('\n');
 
         const bloco3 = [
-            '╭┈❁ *🔑 LICENÇAS DO BOT*',
+            '╭┈❁ *🔑 LICENÇAS DO BOT (A-Z)*',
             '┊',
-            `┊•.̇𖥨֗👻⭟${prefix}gerarlicenca [dias]`,
             `┊•.̇𖥨֗👻⭟${prefix}diminuirlicenca grupo [dias]`,
+            `┊•.̇𖥨֗👻⭟${prefix}gerarlicenca [dias]`,
             `┊•.̇𖥨֗👻⭟${prefix}renovar`,
             '╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯'
         ].join('\n');

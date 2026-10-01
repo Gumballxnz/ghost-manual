@@ -43,7 +43,7 @@ const menuPrefixHandler = async (sock, msg, from, sender, text) => {
     ].join('\n')
 
     const bloco1 = [
-        '╭┈❁ *⚙️ PREFIXO DO GRUPO*',
+        '╭┈❁ *⚙️ PREFIXO DO GRUPO (A-Z)*',
         '┊',
         `┊•.̇𖥨֗👻⭟${prefix}prefixo`,
         `┊•.̇𖥨֗👻⭟${prefix}prefixo <prefixo>`,
@@ -52,14 +52,14 @@ const menuPrefixHandler = async (sock, msg, from, sender, text) => {
     ].join('\n')
 
     const bloco2 = [
-        '╭┈❁ *🌐 PREFIXO GLOBAL*',
+        '╭┈❁ *🌐 PREFIXO GLOBAL (A-Z)*',
         '┊',
         `┊•.̇𖥨֗👻⭟${prefix}prefixoglobal <prefixo>`,
         '╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯'
     ].join('\n')
 
     const bloco3 = [
-        '╭┈❁ *👥 CONSULTA RÁPIDA*',
+        '╭┈❁ *👥 CONSULTA RÁPIDA (A-Z)*',
         '┊',
         '┊•.̇𖥨֗👻⭟prefixo',
         '╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯'

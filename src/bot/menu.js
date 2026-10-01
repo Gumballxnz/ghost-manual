@@ -13,30 +13,30 @@ module.exports = async (sock, msg, from) => {
     ].join('\n')
 
     const bloco1 = [
-        '╭┈❁ *🛒 TABELAS & PREÇOS*',
+        '╭┈❁ *🛒 TABELAS & PREÇOS (A-Z)*',
         '┊',
+        `┊•.̇𖥨֗👻⭟${prefix}informacoes`,
+        `┊•.̇𖥨֗👻⭟${prefix}pagamento`,
         `┊•.̇𖥨֗👻⭟${prefix}tabela`,
         `┊•.̇𖥨֗👻⭟${prefix}tabelasaldo`,
-        `┊•.̇𖥨֗👻⭟${prefix}pagamento`,
-        `┊•.̇𖥨֗👻⭟${prefix}informacoes`,
         '╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯'
     ].join('\n')
 
     const bloco2 = [
-        '╭┈❁ *📋 UTILITÁRIOS & PERFIL*',
+        '╭┈❁ *📋 UTILITÁRIOS & PERFIL (A-Z)*',
         '┊',
+        `┊•.̇𖥨֗👻⭟${prefix}infogp`,
         `┊•.̇𖥨֗👻⭟${prefix}perfil`,
         `┊•.̇𖥨֗👻⭟${prefix}s (Criar Figurinha)`,
-        `┊•.̇𖥨֗👻⭟${prefix}infogp`,
         '╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯'
     ].join('\n')
 
     const bloco3 = [
-        '╭┈❁ *👑 SUPORTE & ATENDIMENTO*',
+        '╭┈❁ *👑 SUPORTE & ATENDIMENTO (A-Z)*',
         '┊',
-        `┊•.̇𖥨֗👻⭟${prefix}suporte`,
-        `┊•.̇𖥨֗👻⭟${prefix}dono`,
         `┊•.̇𖥨֗👻⭟${prefix}aluguel`,
+        `┊•.̇𖥨֗👻⭟${prefix}dono`,
+        `┊•.̇𖥨֗👻⭟${prefix}suporte`,
         '╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯'
     ].join('\n')
 
