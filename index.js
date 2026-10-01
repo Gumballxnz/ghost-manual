@@ -213,6 +213,7 @@ global.sockConnected = false
 global.primarySocket = null
 global.primaryConnected = false
 global.primaryGroups = new Set()
+global.participatingGroups = new Set()
 const botOutgoingMessageIds = new Set()
 const globalProcessedMessages = new Set()
 const MESSAGE_CACHE_TIMEOUT = 5 * 60 * 1000
@@ -430,6 +431,7 @@ async function connectSocket() {
           const { mapearGrupo } = require('./src/bot/core')
           const groups = await sock.groupFetchAllParticipating()
           const gids = Object.keys(groups || {})
+          global.participatingGroups = new Set(gids)
           if (gids.length > 0) {
             console.log(`[SYNC-GRUPOS] 👥 Mapeando participantes de ${gids.length} grupo(s)...`)
             for (const gid of gids) {
@@ -610,6 +612,10 @@ async function connectSocket() {
         for (const g of newGroups) {
           if (g && g.id) {
             global.primaryGroups.add(g.id)
+            if (global.participatingGroups) {
+              global.participatingGroups.add(g.id)
+            }
+            if (global.mapaGrupos) global.mapaGrupos = null
           }
         }
       }
@@ -620,6 +626,28 @@ async function connectSocket() {
     try {
       if (update && update.id) {
         global.primaryGroups.add(update.id)
+        if (global.participatingGroups) {
+          const botId = sock.user?.id ? sock.user.id.split('@')[0].split(':')[0] : ''
+          if (update.action === 'remove' && Array.isArray(update.participants)) {
+            const foiRemovido = update.participants.some(p => {
+              const pNum = String(p).split('@')[0].split(':')[0]
+              return pNum === botId
+            })
+            if (foiRemovido) {
+              global.participatingGroups.delete(update.id)
+              if (global.mapaGrupos) global.mapaGrupos = null
+            }
+          } else if (update.action === 'add' && Array.isArray(update.participants)) {
+            const foiAdicionado = update.participants.some(p => {
+              const pNum = String(p).split('@')[0].split(':')[0]
+              return pNum === botId
+            })
+            if (foiAdicionado) {
+              global.participatingGroups.add(update.id)
+              if (global.mapaGrupos) global.mapaGrupos = null
+            }
+          }
+        }
       }
     } catch {}
   })

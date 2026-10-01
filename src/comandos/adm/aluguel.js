@@ -125,10 +125,10 @@ function obterMapaGrupos() {
     const jids = Object.entries(groups)
         .filter(([id, cfg]) => {
             if (!cfg || !cfg.authorized) return false
-            if (global.primaryGroups && global.primaryGroups.size > 0) {
-                return global.primaryGroups.has(id)
+            if (global.participatingGroups && global.participatingGroups.size > 0) {
+                return global.participatingGroups.has(id)
             }
-            return true
+            return false
         })
         .map(([id]) => id)
         .sort((a, b) => a[0].localeCompare(b[0]))
@@ -578,24 +578,35 @@ const handler = async (sock, msg, from, sender, text) => {
             return true
         }
 
-        const groups = loadGroupConfig()
-
         let allParticipating = {}
         if (sock && typeof sock.groupFetchAllParticipating === 'function') {
             try {
                 allParticipating = await sock.groupFetchAllParticipating() || {}
-            } catch (e) {}
+            } catch (e) {
+                console.error('[GRUPOS] Erro ao buscar grupos participantes:', e.message)
+            }
         }
 
-        const autorizados = Object.entries(groups)
-            .filter(([id, cfg]) => {
-                if (!cfg || !cfg.authorized) return false
-                return !!allParticipating[id] || (global.primaryGroups && global.primaryGroups.has(id))
+        const participatingIds = Object.keys(allParticipating)
+        if (participatingIds.length === 0) {
+            await sock.sendMessage(from, { text: '📋 *Grupos Autorizados:*\n\n_Nenhum grupo ativo encontrado na sessão do WhatsApp._' }, { quoted: msg })
+            return true
+        }
+
+        global.participatingGroups = new Set(participatingIds)
+
+        const groups = loadGroupConfig()
+
+        const autorizados = participatingIds
+            .filter(id => {
+                const cfg = groups[id]
+                return cfg && cfg.authorized === true
             })
+            .map(id => [id, groups[id]])
             .sort((a, b) => a[0].localeCompare(b[0]))
 
         if (autorizados.length === 0) {
-            await sock.sendMessage(from, { text: '📋 *Grupos Autorizados:*\n\n_Nenhum grupo com bot presente registrado._' }, { quoted: msg })
+            await sock.sendMessage(from, { text: '📋 *Grupos Autorizados:*\n\n_Nenhum grupo autorizado onde o bot está presente._' }, { quoted: msg })
             return true
         }
 
