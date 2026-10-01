@@ -436,12 +436,6 @@ module.exports = async function (sock, msg) {
 
       const autorizado = isOwner || (gInfo.authorized === true) || (gInfo.authorized !== false && (hasCentral || temContas))
 
-      if (gInfo && gInfo.authorized === undefined && (hasCentral || temContas)) {
-        gInfo.authorized = true
-        gConfigAll[from] = gInfo
-        cfgMgr.saveGroupConfig(gConfigAll)
-      }
-
       let naoExpirado = true
       if (gInfo?.expiraEm) {
         const nowR = new Date()
@@ -1303,8 +1297,7 @@ _Dados desde o início do registro_`
     const hora = horaMatch[1].padStart(2, '0')
     const minuto = horaMatch[2]
 
-    if (!groupConfig[from]) groupConfig[from] = { authorized: true }
-    if (groupConfig[from].authorized === undefined) groupConfig[from].authorized = true
+    if (!groupConfig[from]) groupConfig[from] = {}
     groupConfig[from].horaFechar = `${hora}:${minuto}`
     configMgr.saveGroupConfig(true)
 
@@ -1338,8 +1331,7 @@ _Dados desde o início do registro_`
     const hora = horaMatch[1].padStart(2, '0')
     const minuto = horaMatch[2]
 
-    if (!groupConfig[from]) groupConfig[from] = { authorized: true }
-    if (groupConfig[from].authorized === undefined) groupConfig[from].authorized = true
+    if (!groupConfig[from]) groupConfig[from] = {}
     groupConfig[from].horaAbrir = `${hora}:${minuto}`
     configMgr2.saveGroupConfig(true)
 

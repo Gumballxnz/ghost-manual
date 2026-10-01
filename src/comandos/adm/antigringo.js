@@ -141,10 +141,8 @@ module.exports = async function (sock, msg, from, sender, text) {
 
     const dotJid = from.replace(/\./g, '___dot___')
     const groupConfig = configManager.loadGroupConfig()
-    if (!groupConfig[from]) groupConfig[from] = { authorized: true }
-    if (groupConfig[from].authorized === undefined) groupConfig[from].authorized = true
+    if (!groupConfig[from]) groupConfig[from] = {}
     if (!groupConfig[dotJid]) groupConfig[dotJid] = groupConfig[from]
-    if (groupConfig[dotJid].authorized === undefined) groupConfig[dotJid].authorized = true
 
     const subCmd = (rawTokens[1] || '').toLowerCase()
     const isMapCmd = (

@@ -473,15 +473,6 @@ module.exports = async (sock, msg, from, sender, text) => {
         contas[from].emola.push({ numero, nome, addedAt: new Date().toISOString() })
         saveContas(contas, from)
 
-        try {
-            const configMgr = require('../../utils/configManager')
-            const groupConfig = configMgr.loadGroupConfig()
-            if (!groupConfig[from]) groupConfig[from] = {}
-            if (groupConfig[from].authorized === undefined) {
-                groupConfig[from].authorized = true
-                configMgr.saveGroupConfig(groupConfig)
-            }
-        } catch {}
 
         await sock.sendMessage(from, {
             text: [
@@ -515,15 +506,6 @@ module.exports = async (sock, msg, from, sender, text) => {
         contas[from].mpesa.push({ numero, nome, addedAt: new Date().toISOString() })
         saveContas(contas, from)
 
-        try {
-            const configMgr = require('../../utils/configManager')
-            const groupConfig = configMgr.loadGroupConfig()
-            if (!groupConfig[from]) groupConfig[from] = {}
-            if (groupConfig[from].authorized === undefined) {
-                groupConfig[from].authorized = true
-                configMgr.saveGroupConfig(groupConfig)
-            }
-        } catch {}
 
         await sock.sendMessage(from, {
             text: [

@@ -123,7 +123,13 @@ function obterMapaGrupos() {
     }
     const groups = loadGroupConfig()
     const jids = Object.entries(groups)
-        .filter(([id, cfg]) => cfg.authorized)
+        .filter(([id, cfg]) => {
+            if (!cfg || !cfg.authorized) return false
+            if (global.primaryGroups && global.primaryGroups.size > 0) {
+                return global.primaryGroups.has(id)
+            }
+            return true
+        })
         .map(([id]) => id)
         .sort((a, b) => a[0].localeCompare(b[0]))
     global.mapaGrupos = jids
@@ -584,13 +590,7 @@ const handler = async (sock, msg, from, sender, text) => {
         const autorizados = Object.entries(groups)
             .filter(([id, cfg]) => {
                 if (!cfg || !cfg.authorized) return false
-
-                if (allParticipating[id]) return true
-
-                if (cfg.name && !/^Grupo\s*\d+$/i.test(cfg.name) && !/^\d+$/.test(cfg.name)) {
-                    return true
-                }
-                return false
+                return !!allParticipating[id] || (global.primaryGroups && global.primaryGroups.has(id))
             })
             .sort((a, b) => a[0].localeCompare(b[0]))
 

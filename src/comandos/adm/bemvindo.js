@@ -49,7 +49,7 @@ module.exports = async (sock, msg, from, sender, text) => {
 
   try {
     const groupConfig = configManager.loadGroupConfig()
-    if (!groupConfig[from]) groupConfig[from] = { authorized: true }
+    if (!groupConfig[from]) groupConfig[from] = {}
     groupConfig[from].bemvindo = isLigado
     groupConfig[from].boasVindas = isLigado
     configManager.saveGroupConfig(groupConfig)

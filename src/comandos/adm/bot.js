@@ -72,9 +72,12 @@ module.exports = async (sock, msg, from, sender, text) => {
                         aluguelStatus = 'off'
                         diasRestantes = '0'
                     }
-                } else {
+                } else if (grupoInfo.duracao === 'permanente' || grupoInfo.duracao === 'perm' || grupoInfo.isVitalicio === true) {
                     aluguelStatus = 'on'
                     diasRestantes = 'Vitalício'
+                } else {
+                    aluguelStatus = 'off'
+                    diasRestantes = '0'
                 }
             } else {
                 aluguelStatus = 'off'
