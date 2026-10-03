@@ -52,9 +52,17 @@ function encontrarSecao(texto, posicao) {
     return 'Diário'
 }
 
+function normalizarTextoTabela(str) {
+    if (!str || typeof str !== 'string') return ''
+    return str
+        .normalize('NFKC')
+        .replace(/[\u200B-\u200D\uFEFF]/g, '')
+        .replace(/[➔➜➝➞➟➡➡➤►]/g, '➔')
+}
+
 function limparNumeroTabela(str) {
     if (!str) return 0
-    let s = String(str).trim().replace(/\s+/g, '')
+    let s = normalizarTextoTabela(String(str)).trim().replace(/\s+/g, '')
     if (/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(s)) {
         s = s.replace(/\./g, '').replace(',', '.')
     } else if (/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(s)) {
@@ -70,7 +78,7 @@ function parsearTabela(textoTabela) {
     if (!textoTabela) return []
     const resultados = []
 
-    const textoLimpo = textoTabela.replace(/\*/g, '')
+    const textoLimpo = normalizarTextoTabela(textoTabela).replace(/\*/g, '')
 
     const linhas = textoLimpo.split('\n')
 
@@ -90,20 +98,20 @@ function parsearTabela(textoTabela) {
         let preco = null
         let mb = null
 
-        const matchA = linha.match(/(?:^|[^\d.,])([\d.,]+)\s*(?:MT|Mt|mt|mzn|MZN).*?([\d][\d.,]*)\s*(MB|GB|mb|gb|mega)\b/i)
+        const matchA = linha.match(/(?:^|[^\d.,])([\d.,]+)\s*(?:MT[Ss]?|mzn|meticais)\b.*?([\d][\d.,]*)\s*(MB|GB|mb|gb|mega|gigas?|megas?|G|M)\b/i)
 
-        const matchBC = linha.match(/(?:^|[^\d.,])([\d][\d.,]*)\s*(MB|GB|mb|gb|mega)\b.*?(\d[\d\s.,]*)\s*(?:MT|Mt|mt|mzn|MZN)/i)
+        const matchBC = linha.match(/(?:^|[^\d.,])([\d][\d.,]*)\s*(MB|GB|mb|gb|mega|gigas?|megas?|G|M)\b.*?(\d[\d\s.,]*)\s*(?:MT[Ss]?|mzn|meticais)\b/i)
 
         if (matchBC) {
             preco = limparNumeroTabela(matchBC[3])
             const valorRaw = limparNumeroTabela(matchBC[1])
             const unidade = matchBC[2].toUpperCase()
-            mb = unidade === 'GB' || unidade === 'G' ? valorRaw * 1024 : valorRaw
+            mb = unidade === 'GB' || unidade === 'G' || unidade.startsWith('GIGA') ? valorRaw * 1024 : valorRaw
         } else if (matchA) {
             preco = limparNumeroTabela(matchA[1])
             const valorRaw = limparNumeroTabela(matchA[2])
             const unidade = matchA[3].toUpperCase()
-            mb = unidade === 'GB' || unidade === 'G' ? valorRaw * 1024 : valorRaw
+            mb = unidade === 'GB' || unidade === 'G' || unidade.startsWith('GIGA') ? valorRaw * 1024 : valorRaw
         }
 
         if (preco !== null && mb !== null && preco > 0 && mb > 0) {
@@ -144,10 +152,10 @@ function calcularMegasPorTexto(valor, textoTabela) {
 function buscarDadosPorPacoteNaTabela(planoStr, textoTabela) {
     if (!planoStr) return null
 
-    const str = String(planoStr).trim()
-    const isExplicitPreco = /(?:MT|Mt|mt|mzn|MZN)\b/i.test(str)
+    const str = normalizarTextoTabela(String(planoStr)).trim()
+    const isExplicitPreco = /(?:MT[Ss]?|mzn|meticais)\b/i.test(str)
 
-    const matchPlano = str.match(/^([\d.,]+)\s*(MB|GB|mb|gb|M|G|MT|Mt|mt|mzn|MZN)?$/i)
+    const matchPlano = str.match(/^([\d.,]+)\s*(MB|GB|mb|gb|M|G|MT[Ss]?|mzn|meticais)?$/i)
     let valorAlvo = null
     let unidadePlano = ''
 
@@ -155,7 +163,7 @@ function buscarDadosPorPacoteNaTabela(planoStr, textoTabela) {
         valorAlvo = parseFloat(matchPlano[1].replace(',', '.'))
         unidadePlano = (matchPlano[2] || '').toUpperCase()
     } else {
-        const matchLivre = str.match(/([\d.,]+)\s*(MB|GB|mb|gb|M|G|MT|Mt|mt|mzn|MZN)?/i)
+        const matchLivre = str.match(/([\d.,]+)\s*(MB|GB|mb|gb|M|G|MT[Ss]?|mzn|meticais)?/i)
         if (!matchLivre) return null
         valorAlvo = parseFloat(matchLivre[1].replace(',', '.'))
         unidadePlano = (matchLivre[2] || '').toUpperCase()
@@ -165,7 +173,7 @@ function buscarDadosPorPacoteNaTabela(planoStr, textoTabela) {
 
     const entradas = textoTabela ? parsearTabela(textoTabela) : []
 
-    if (isExplicitPreco || unidadePlano === 'MT' || unidadePlano === 'MZN') {
+    if (isExplicitPreco || /^MT/i.test(unidadePlano) || unidadePlano === 'MZN' || unidadePlano === 'METICAIS') {
         for (const e of entradas) {
             if (e.preco === valorAlvo) {
                 const display = formatarDisplay(e.mb, e.extraDesc || '', e.tipo || '')
@@ -509,7 +517,7 @@ function calcularMegas(valor, groupId) {
 function parsearTabelaSaldo(textoSaldo) {
     if (!textoSaldo) return []
     const resultados = []
-    const textoLimpo = textoSaldo.replace(/\*/g, '')
+    const textoLimpo = normalizarTextoTabela(textoSaldo).replace(/\*/g, '')
     const linhas = textoLimpo.split('\n')
 
     for (let i = 0; i < linhas.length; i++) {
@@ -520,11 +528,11 @@ function parsearTabelaSaldo(textoSaldo) {
         let preco = null
 
         // 1. Tenta formato: <preco> MT ... <saldo> saldo (mais comum)
-        const matchB = linha.match(/(?:^|[^\d.,])([\d.,]+)\s*(?:MT|Mt|mt|mzn|MZN)\b.*?(\d[\d\s.,]*)\s*(?:saldo|Saldo|s)\b/i)
+        const matchB = linha.match(/(?:^|[^\d.,])([\d.,]+)\s*(?:MT[Ss]?|mzn|meticais)\b.*?(\d[\d\s.,]*)\s*(?:saldo|Saldo|s)\b/i)
         // 2. Tenta formato: <saldo> saldo ... <preco> MT
-        const matchA = linha.match(/(?:^|[^\d.,])([\d.,]+)\s*(?:saldo|Saldo|s)\b.*?(\d[\d\s.,]*)\s*(?:MT|Mt|mt|mzn|MZN)\b/i)
+        const matchA = linha.match(/(?:^|[^\d.,])([\d.,]+)\s*(?:saldo|Saldo|s)\b.*?(\d[\d\s.,]*)\s*(?:MT[Ss]?|mzn|meticais)\b/i)
         // 3. Fallback: <preco> MT ... <saldo> (número puro após separador)
-        const matchBFallback = !matchB && !matchA ? linha.match(/(?:^|[^\d.,])([\d.,]+)\s*(?:MT|Mt|mt|mzn|MZN)\b.*?(\d[\d\s.,]*)/i) : null
+        const matchBFallback = !matchB && !matchA ? linha.match(/(?:^|[^\d.,])([\d.,]+)\s*(?:MT[Ss]?|mzn|meticais)\b.*?(\d[\d\s.,]*)/i) : null
 
         if (matchB) {
             preco = limparNumeroTabela(matchB[1])
@@ -714,5 +722,6 @@ module.exports = {
     encontrarPrecoSaldoNaTabela,
     obterTodosPacotesPorValor,
     formatarDisplay,
-    padronizarTipo
+    padronizarTipo,
+    normalizarTextoTabela
 }
