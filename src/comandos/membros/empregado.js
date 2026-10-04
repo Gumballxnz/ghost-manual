@@ -25,6 +25,11 @@ async function handleEmpregado(sock, msg, from) {
 }
 
 module.exports = async function(sock, msg, from, sender, text) {
+    const raw = (text || '').trim().toLowerCase()
+    const prefix = (require('../../../data/config.json').prefix || '.')
+    if (raw !== prefix + 'empregado' && raw !== '.empregado') {
+        return false
+    }
     return handleEmpregado(sock, msg, from)
 }
 

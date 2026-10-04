@@ -189,8 +189,7 @@ module.exports = async function (sock, msg) {
   const reservedSystemCmds = new Set([
     'tabela', 'tabelas', 'precos', 'preços', 'tabelasaldo', 'saldo', 'diarios', 'diários', 'diario', 'diário',
     'semanal', 'semanais', 'mensal', 'mensais', 'diamante', 'diamantes', 'tudotop', 'tudo top',
-    'pagamento', 'pagamentos', 'conta', 'contas', 'informacoes', 'informações', 'menu', 'bot', 'ping', 'ajuda', 'help',
-    'empregado'
+    'pagamento', 'pagamentos', 'conta', 'contas', 'informacoes', 'informações', 'menu', 'bot', 'ping', 'ajuda', 'help'
   ])
   const textNormalizedCmd = text.replace(/^[.!/]/, '').trim().toLowerCase()
 
@@ -889,10 +888,7 @@ module.exports = async function (sock, msg) {
     return
   }
 
-  if (
-    bodyLower === 'empregado' ||
-    text === config.prefix + 'empregado'
-  ) {
+  if (text === config.prefix + 'empregado' || text === '.empregado') {
     const { handleEmpregado } = require('../comandos/membros/empregado')
     await handleEmpregado(sock, msg, from)
     return

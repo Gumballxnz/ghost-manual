@@ -453,7 +453,7 @@ module.exports = async function (sock, msg) {
 
             `${config.prefix}teste`,
             `${config.prefix}ping`,
-            `${config.prefix}empregado`, 'empregado',
+            `${config.prefix}empregado`,
             `${config.prefix}pagamento`, 'pagamento',
             `${config.prefix}pagamentos`, 'pagamentos',
             `${config.prefix}conta`, 'conta',
