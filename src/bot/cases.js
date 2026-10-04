@@ -189,7 +189,8 @@ module.exports = async function (sock, msg) {
   const reservedSystemCmds = new Set([
     'tabela', 'tabelas', 'precos', 'preços', 'tabelasaldo', 'saldo', 'diarios', 'diários', 'diario', 'diário',
     'semanal', 'semanais', 'mensal', 'mensais', 'diamante', 'diamantes', 'tudotop', 'tudo top',
-    'pagamento', 'pagamentos', 'conta', 'contas', 'informacoes', 'informações', 'menu', 'bot', 'ping', 'ajuda', 'help'
+    'pagamento', 'pagamentos', 'conta', 'contas', 'informacoes', 'informações', 'menu', 'bot', 'ping', 'ajuda', 'help',
+    'empregado'
   ])
   const textNormalizedCmd = text.replace(/^[.!/]/, '').trim().toLowerCase()
 
@@ -885,6 +886,15 @@ module.exports = async function (sock, msg) {
         `_Instruções: Faça o pagamento e envie o comprovativo no grupo para ativação automática!_`
       await sock.sendMessage(from, { text: msgErroPagamento }, { quoted: msg })
     }
+    return
+  }
+
+  if (
+    bodyLower === 'empregado' ||
+    text === config.prefix + 'empregado'
+  ) {
+    const { handleEmpregado } = require('../comandos/membros/empregado')
+    await handleEmpregado(sock, msg, from)
     return
   }
 
