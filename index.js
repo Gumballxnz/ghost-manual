@@ -129,6 +129,9 @@ async function executarConexaoCli(isQrMode = false) {
       const shouldReconnect = statusCode !== DisconnectReason.loggedOut
       if (shouldReconnect) {
         console.log('[RECONECTANDO] Tentando manter conexão ativa...')
+        try { sock.ev.removeAllListeners() } catch {}
+        try { sock.ws.close() } catch {}
+        setTimeout(() => executarConexaoCli(isQrMode), 1500)
       } else {
         console.log('❌ Sessão encerrada (Logged out). Limpando pasta para recomeçar...')
         try { fs.rmSync(sessionDir, { recursive: true, force: true }) } catch {}
