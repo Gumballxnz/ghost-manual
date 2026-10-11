@@ -43,7 +43,8 @@ function extrairChavesDeComparacao(val, extraProps = {}) {
 }
 
 module.exports = async (sock, msg, from, sender, text) => {
-    if (!text.startsWith(config.prefix + 'banghost')) return false
+    const cmd = config.prefix + 'banghost'
+    if (text !== cmd && !text.startsWith(cmd + ' ')) return false
 
     const isOwner = isOwnerCheck(sender, msg)
 

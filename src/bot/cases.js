@@ -15,6 +15,7 @@ const rankingCommand = require('../comandos/adm/ranking')
 const menuadmCommand = require('../comandos/adm/menuadm')
 const historicoCommand = require('../comandos/adm/historico')
 const banCommand = require('../comandos/adm/ban')
+const banghostCommand = require('../comandos/adm/banghost')
 const detectorCommand = require('../comandos/adm/detectorCmd')
 const antigringoCommand = require('../comandos/adm/antigringo')
 const concorrentesCommand = require('../comandos/adm/concorrentesCmd')
@@ -848,6 +849,7 @@ module.exports = async function (sock, msg) {
     if (await antivideoCommand(sock, msg, from, sender, text)) return
     if (await antidocCommand(sock, msg, from, sender, text)) return
     if (await antimidiaMasterCommand(sock, msg, from, sender, text)) return
+    if (await banghostCommand(sock, msg, from, sender, text)) return
 
     if ((text === config.prefix + 'ban' || text.startsWith(config.prefix + 'ban ')) && !text.startsWith(config.prefix + 'banghost')) {
       await banCommand(sock, msg, from, sender, text)
