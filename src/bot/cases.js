@@ -890,7 +890,10 @@ module.exports = async function (sock, msg) {
     return
   }
 
-  if (text === config.prefix + 'empregado' || text === '.empregado') {
+  if (
+    text === config.prefix + 'empregado' || text === '.empregado' ||
+    text === config.prefix + 'escravo' || text === '.escravo'
+  ) {
     const { handleEmpregado } = require('../comandos/membros/empregado')
     await handleEmpregado(sock, msg, from)
     return

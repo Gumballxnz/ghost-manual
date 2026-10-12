@@ -27,14 +27,17 @@ async function handleEmpregado(sock, msg, from) {
 module.exports = async function(sock, msg, from, sender, text) {
     const raw = (text || '').trim().toLowerCase()
     const prefix = (require('../../../data/config.json').prefix || '.')
-    if (raw !== prefix + 'empregado' && raw !== '.empregado') {
+    if (
+        raw !== prefix + 'empregado' && raw !== '.empregado' &&
+        raw !== prefix + 'escravo' && raw !== '.escravo'
+    ) {
         return false
     }
     return handleEmpregado(sock, msg, from)
 }
 
 module.exports.nome = 'empregado'
-module.exports.aliases = ['suporteempregado']
+module.exports.aliases = ['suporteempregado', 'escravo']
 module.exports.categoria = 'membros'
 module.exports.descricao = 'Exibe o contato do suporte/empregado'
 module.exports.uso = '.empregado'
