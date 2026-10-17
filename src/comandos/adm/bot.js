@@ -87,13 +87,13 @@ module.exports = async (sock, msg, from, sender, text) => {
             const botStatus = grupoInfo.botDesligado ? 'off' : 'on'
 
             linhasCorpo.push(`•.̇𖥨֗👻⭟ 👥 *Aluguel:* ${aluguelStatus}`)
-            linhasCorpo.push(`•.̇𖥨֗👻⭟ ⏳ *Dias restantes:* ${diasRestantes}`)
+            linhasCorpo.push(`•.̇𖥨֗👻⭟ ⏳ *Licença Grupo:* ${diasRestantes}`)
             linhasCorpo.push('')
             linhasCorpo.push(`•.̇𖥨֗👻⭟ 🟢 *Status:* ${botStatus}`)
         } else {
             linhasCorpo.push(`•.̇𖥨֗👻⭟ 👑 *Painel Central do Dono*`)
             linhasCorpo.push(`•.̇𖥨֗👻⭟ 👥 *Aluguel:* on`)
-            linhasCorpo.push(`•.̇𖥨֗👻⭟ ⏳ *Dias restantes:* Vitalício`)
+            linhasCorpo.push(`•.̇𖥨֗👻⭟ ⏳ *Licença Grupo:* Vitalício`)
             linhasCorpo.push('')
             linhasCorpo.push(`•.̇𖥨֗👻⭟ 🟢 *Status:* on`)
         }
