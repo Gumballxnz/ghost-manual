@@ -1,8 +1,6 @@
 function extrairNumerosEDistribuirPacotes(bodyText, numeroDestinoExcluir, megasTotal, valorTotal) {
     if (!bodyText) return []
 
-    const linhas = bodyText.split('\n')
-
     const destinosExcluirList = (Array.isArray(numeroDestinoExcluir) ? numeroDestinoExcluir : [numeroDestinoExcluir])
         .filter(Boolean)
         .map(d => String(d).replace(/\D/g, '').slice(-9))
@@ -20,14 +18,13 @@ function extrairNumerosEDistribuirPacotes(bodyText, numeroDestinoExcluir, megasT
         }
     }
 
-    const numerosEncontrados = []
-
+    const matches = []
     const regexNumeroDireto = /(?:258)?\b(8[45]\d{7})\b/g
     for (const m of bodyText.matchAll(regexNumeroDireto)) {
         const numRaw = m[1]
         const num9 = numRaw.slice(-9)
-        if (!destinosExcluirList.includes(num9) && !numerosEncontrados.some(n => n.slice(-9) === num9)) {
-            numerosEncontrados.push(numRaw)
+        if (!destinosExcluirList.includes(num9) && !matches.some(n => n.num.slice(-9) === num9)) {
+            matches.push({ num: numRaw, index: m.index, len: m[0].length })
         }
     }
 
@@ -35,99 +32,166 @@ function extrairNumerosEDistribuirPacotes(bodyText, numeroDestinoExcluir, megasT
     for (const m of bodyText.matchAll(regexNumeroEspacado)) {
         const numRaw = m[1].replace(/\D/g, '')
         const num9 = numRaw.slice(-9)
-        if (numRaw.length === 9 && !destinosExcluirList.includes(num9) && !numerosEncontrados.some(n => n.slice(-9) === num9)) {
-            numerosEncontrados.push(numRaw)
+        if (numRaw.length === 9 && !destinosExcluirList.includes(num9) && !matches.some(n => n.num.slice(-9) === num9)) {
+            matches.push({ num: numRaw, index: m.index, len: m[0].length })
         }
     }
 
-    if (numerosEncontrados.length === 0) {
-        return []
-    }
+    if (matches.length === 0) return []
 
-    const totalNumeros = numerosEncontrados.length
+    matches.sort((a, b) => a.index - b.index)
+    const K = matches.length
     const totalMb = megasTotal ? (parseInt(megasTotal.mb, 10) || 0) : 0
     const isSaldo = megasTotal && megasTotal.tipo && megasTotal.tipo.toLowerCase().includes('saldo')
 
-    const pedidos = []
+    const pkgRegex = /(?:^|[^0-9])(?:[.,\s]+)?([1-9]\d*(?:[.,]\d+)?)\s*(GB|MB|G|M|MT|Mt|mt|mzn|saldo)\b/i
+    const rawParsed = []
 
-    for (const num of numerosEncontrados) {
-        const num9 = num.slice(-9)
+    for (let i = 0; i < K; i++) {
+        const cur = matches[i]
+        const prev = i > 0 ? matches[i - 1] : null
+        const next = i < K - 1 ? matches[i + 1] : null
 
-        const linha = linhas.find(l => l.replace(/\D/g, '').includes(num9)) || ''
+        const textAfter = bodyText.slice(cur.index + cur.len, next ? next.index : bodyText.length)
+        const textBefore = bodyText.slice(prev ? prev.index + prev.len : 0, cur.index)
 
-        let mbNum = 0
-        let displayStr = ''
-        let valorNum = valorTotal > 0 ? (valorTotal / totalNumeros) : 0
+        let match = null
+        if (!isComprovante) {
+            const matchBefore = textBefore.match(pkgRegex)
+            const matchAfter = textAfter.match(pkgRegex)
 
-        if (totalNumeros === 1 && totalMb > 0) {
-            mbNum = totalMb
-            if (isSaldo) {
-                displayStr = `${mbNum}MT Saldo`
-            } else {
-                if (mbNum >= 1024) {
-                    const gbVal = mbNum / 1024
-                    displayStr = Number.isInteger(gbVal) ? `${gbVal}GB` : `${gbVal.toFixed(1)}GB`
-                } else {
-                    displayStr = `${mbNum}MB`
-                }
-            }
-        } else {
-
-            if (!isComprovante) {
-                const matchPacoteLinha = linha.match(/([\d.,]+)\s*(GB|MB|G|M|MT|Mt|mt|mzn|saldo)\b/i)
-                if (matchPacoteLinha) {
-                    const qtd = parseFloat(matchPacoteLinha[1].replace(',', '.'))
-                    const unidade = matchPacoteLinha[2].toUpperCase()
-
-                    if (unidade === 'GB' || unidade === 'G') {
-                        mbNum = Math.round(qtd * 1024)
-                        displayStr = qtd >= 1 ? `${qtd}GB` : `${mbNum}MB`
-                    } else if (unidade === 'MB' || unidade === 'M') {
-                        mbNum = Math.round(qtd)
-                        displayStr = mbNum >= 1024 ? `${(mbNum / 1024).toFixed(1).replace('.0', '')}GB` : `${mbNum}MB`
-                    } else if (unidade === 'MT' || unidade === 'SALDO' || unidade === 'MZN') {
-                        mbNum = Math.round(qtd)
-                        valorNum = qtd
-                        displayStr = `${qtd}MT Saldo`
-                    }
-                }
-            }
-
-            if (!mbNum && totalMb > 0) {
-                mbNum = Math.floor(totalMb / totalNumeros)
-                if (isSaldo) {
-                    const saldoIndividual = mbNum
-                    displayStr = `${saldoIndividual}MT Saldo`
-                } else {
-                    if (mbNum >= 1024) {
-                        const gbVal = mbNum / 1024
-                        displayStr = Number.isInteger(gbVal) ? `${gbVal}GB` : `${gbVal.toFixed(1)}GB`
-                    } else {
-                        displayStr = `${mbNum}MB`
-                    }
-                }
-            } else if (!displayStr) {
-                if (totalMb > 0) {
-                    const mbDiv = Math.floor(totalMb / totalNumeros)
-                    mbNum = mbDiv
-                    displayStr = mbDiv >= 1024 ? `${(mbDiv / 1024).toFixed(1).replace('.0', '')}GB` : `${mbDiv}MB`
-                } else {
-                    displayStr = megasTotal ? (megasTotal.gb || 'MANUAL') : 'MANUAL'
-                }
+            if (matchBefore && /(?:para|pro|p\/|ao|a\s+conta)\s*$/i.test(textBefore.trim())) {
+                match = matchBefore
+            } else if (matchAfter) {
+                match = matchAfter
+            } else if (matchBefore) {
+                match = matchBefore
             }
         }
 
-        if (!isSaldo && mbNum > 0 && mbNum < 100) {
-            mbNum = 100
-            displayStr = '100MB'
+        let mbNum = null
+        let isSaldoNum = false
+        if (match) {
+            const qtd = parseFloat(match[1].replace(',', '.'))
+            const unidade = match[2].toUpperCase()
+
+            if (unidade === 'GB' || unidade === 'G') {
+                mbNum = Math.round(qtd * 1024)
+            } else if (unidade === 'MB' || unidade === 'M') {
+                mbNum = Math.round(qtd)
+            } else if (unidade === 'MT' || unidade === 'SALDO' || unidade === 'MZN') {
+                mbNum = Math.round(qtd)
+                isSaldoNum = true
+            }
+        }
+
+        rawParsed.push({ num: cur.num, mbNum, isSaldoNum })
+    }
+
+    const isMultipleOf10GB = !isSaldo && totalMb >= 10240 && (totalMb % 10240 === 0)
+    const totalUnits = isMultipleOf10GB ? Math.round(totalMb / 10240) : 0
+    const anySpecified = rawParsed.some(p => p.mbNum !== null)
+
+    let allocated = []
+
+    if (anySpecified) {
+        let remMb = totalMb
+        for (const p of rawParsed) {
+            if (p.mbNum !== null) {
+                let desired = p.mbNum
+                if (isMultipleOf10GB) {
+                    desired = Math.max(10240, Math.round(desired / 10240) * 10240)
+                }
+                const actual = Math.min(desired, remMb)
+                remMb -= actual
+                allocated.push({ num: p.num, mb: actual, specified: true, isSaldoNum: p.isSaldoNum })
+            } else {
+                allocated.push({ num: p.num, mb: 0, specified: false, isSaldoNum: false })
+            }
+        }
+
+        const unspec = allocated.filter(a => !a.specified)
+        if (remMb > 0 && unspec.length > 0) {
+            if (isMultipleOf10GB) {
+                const remUnits = Math.round(remMb / 10240)
+                const baseU = Math.floor(remUnits / unspec.length)
+                const extraU = remUnits % unspec.length
+                unspec.forEach((item, idx) => {
+                    const u = baseU + (idx < extraU ? 1 : 0)
+                    item.mb += u * 10240
+                    remMb -= u * 10240
+                })
+            } else {
+                const share = Math.floor(remMb / unspec.length)
+                unspec.forEach((item, idx) => {
+                    const add = (idx === 0) ? (remMb - share * (unspec.length - 1)) : share
+                    item.mb += add
+                })
+                remMb = 0
+            }
+        }
+
+        if (remMb > 0 && allocated.length > 0) {
+            allocated[0].mb += remMb
+        }
+    } else {
+        if (isMultipleOf10GB) {
+            const baseU = Math.floor(totalUnits / K)
+            const extraU = totalUnits % K
+            for (let i = 0; i < K; i++) {
+                const u = baseU + (i < extraU ? 1 : 0)
+                allocated.push({ num: matches[i].num, mb: u * 10240, specified: false, isSaldoNum: false })
+            }
+        } else if (isSaldo) {
+            const share = Math.floor(totalMb / K)
+            const rem = totalMb % K
+            for (let i = 0; i < K; i++) {
+                const s = (i === 0) ? (share + rem) : share
+                allocated.push({ num: matches[i].num, mb: s, specified: false, isSaldoNum: true })
+            }
+        } else {
+            const share = Math.floor(totalMb / K)
+            const rem = totalMb % K
+            for (let i = 0; i < K; i++) {
+                const mb = (i === 0) ? (share + rem) : share
+                allocated.push({ num: matches[i].num, mb, specified: false, isSaldoNum: false })
+            }
+        }
+    }
+
+    allocated = allocated.filter(a => a.mb > 0)
+
+    let valRestante = valorTotal > 0 ? valorTotal : 0
+    const pedidos = []
+
+    for (let i = 0; i < allocated.length; i++) {
+        const item = allocated[i]
+        let val
+        if (i === allocated.length - 1) {
+            val = parseFloat(valRestante.toFixed(2))
+        } else {
+            val = totalMb > 0 ? parseFloat(((valorTotal * item.mb) / totalMb).toFixed(2)) : 0
+            valRestante -= val
+        }
+
+        let displayStr = ''
+        if (isSaldo || item.isSaldoNum) {
+            displayStr = `${item.mb}MT Saldo`
+        } else {
+            if (item.mb >= 1024) {
+                const gbVal = item.mb / 1024
+                displayStr = Number.isInteger(gbVal) ? `${gbVal}GB` : `${gbVal.toFixed(1)}GB`
+            } else {
+                displayStr = `${item.mb}MB`
+            }
         }
 
         pedidos.push({
-            numero: num,
-            mb: (!isSaldo && (mbNum || 1000) < 100) ? 100 : (mbNum || 1000),
-            saldo: isSaldo ? (mbNum || (megasTotal && parseInt(megasTotal.mb, 10)) || valorNum) : undefined,
+            numero: item.num,
+            mb: (!isSaldo && !item.isSaldoNum && item.mb < 100) ? 100 : item.mb,
+            saldo: (isSaldo || item.isSaldoNum) ? item.mb : undefined,
             gb: displayStr,
-            valor: parseFloat(valorNum.toFixed(2)),
+            valor: val,
             displayPacote: displayStr
         })
     }
@@ -143,8 +207,7 @@ function extrairNumerosEDistribuirPacotes(bodyText, numeroDestinoExcluir, megasT
     const resultadoFinal = []
 
     for (const p of pedidos) {
-
-        if (!isSaldo && !isEspecial && p.mb > 10240) {
+        if (!isSaldo && !p.saldo && !isEspecial && p.mb > 10240) {
             let restante = p.mb
             let valorRestante = p.valor
             const totalFatias = Math.ceil(p.mb / 10240)
@@ -152,7 +215,12 @@ function extrairNumerosEDistribuirPacotes(bodyText, numeroDestinoExcluir, megasT
 
             while (restante > 0) {
                 const fatiaMb = Math.min(10240, restante)
-                const fatiaValor = parseFloat((valorRestante * (fatiaMb / (restante + fatiaMb))).toFixed(2))
+                let fatiaValor
+                if (fatiaIndex === totalFatias) {
+                    fatiaValor = parseFloat(valorRestante.toFixed(2))
+                } else {
+                    fatiaValor = parseFloat(((p.valor * fatiaMb) / p.mb).toFixed(2))
+                }
                 restante -= fatiaMb
                 valorRestante -= fatiaValor
 
