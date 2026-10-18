@@ -123,6 +123,15 @@ module.exports = async (sock, msg, from, sender, text) => {
             }
 
             configManager.saveGroupConfig(true);
+            try {
+                const { groupConfigStore } = require('../../utils/firebaseDataLayer');
+                if (groupConfigStore && typeof groupConfigStore.patch === 'function') {
+                    const safeKey = from.replace(/\./g, '___dot___');
+                    groupConfigStore.patch(safeKey, groups[from]);
+                }
+            } catch (errPatch) {
+                console.error('[LICENCA] Erro ao gravar patch granular:', errPatch.message);
+            }
 
             const NANOS_PADRAO = {
                 'peço megas': 'Pode mandar, megas nunca acabam ✅',

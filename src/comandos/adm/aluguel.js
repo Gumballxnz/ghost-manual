@@ -678,7 +678,30 @@ const handler = async (sock, msg, from, sender, text) => {
         try {
             await sock.sendMessage(from, { text: '⏳ Entrando no grupo...' }, { quoted: msg })
 
+            let inviteInfo = null
+            try {
+                inviteInfo = await sock.groupGetInviteInfo(inviteCode)
+            } catch {}
+
             const groupId = await sock.groupAcceptInvite(inviteCode)
+
+            if (!groupId) {
+                const nomeGrupo = inviteInfo?.subject || 'Grupo'
+                const targetJid = inviteInfo?.id ? (inviteInfo.id.includes('@') ? inviteInfo.id : `${inviteInfo.id}@g.us`) : ''
+                await sock.sendMessage(from, {
+                    text: [
+                        '📩 *PEDIDO DE ADESÃO ENVIADO!*',
+                        '────────────────────────',
+                        `👥 *Grupo:* ${nomeGrupo}`,
+                        ...(targetJid ? [`🆔 *ID:* \`${targetJid}\``] : []),
+                        '⏳ *Status:* *Aguardando aprovação dos administradores*',
+                        '────────────────────────',
+                        '💡 O grupo requer aprovação de novos membros. Um administrador precisa aceitar a solicitação para o bot entrar.'
+                    ].join('\n')
+                }, { quoted: msg })
+                return true
+            }
+
             const targetJid = groupId.includes('@') ? groupId : `${groupId}@g.us`
 
             const groups = loadGroupConfig()
@@ -686,7 +709,7 @@ const handler = async (sock, msg, from, sender, text) => {
             const agora = getDataMocambique().getTime()
             const estaAtivo = cfg && cfg.authorized && (!cfg.expiraEm || cfg.expiraEm > agora)
 
-            let nomeGrupo = 'Grupo'
+            let nomeGrupo = inviteInfo?.subject || 'Grupo'
             try {
                 const { getGroupMetadataCached } = require('../../utils/baileys')
                 const meta = await getGroupMetadataCached(sock, targetJid)
@@ -729,7 +752,12 @@ const handler = async (sock, msg, from, sender, text) => {
             }
         } catch (err) {
             console.error('[ENTRAR] Erro:', err.message)
-            await sock.sendMessage(from, { text: '❌ Erro ao entrar no grupo. O link pode estar inválido ou expirado.' }, { quoted: msg })
+            const isAlreadyInGroup = err.message?.includes('409') || err.message?.includes('conflict') || err.output?.statusCode === 409
+            if (isAlreadyInGroup) {
+                await sock.sendMessage(from, { text: 'ℹ️ O bot já está dentro deste grupo!' }, { quoted: msg })
+            } else {
+                await sock.sendMessage(from, { text: '❌ Erro ao entrar no grupo. O link pode estar inválido ou expirado.' }, { quoted: msg })
+            }
         }
         return true
     }
