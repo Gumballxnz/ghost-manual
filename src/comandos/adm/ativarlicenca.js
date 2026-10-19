@@ -100,11 +100,19 @@ module.exports = async (sock, msg, from, sender, text) => {
     const { licencasStore } = require('../../utils/firebaseDataLayer');
     let licencas = licencasStore.loadSync() || {};
 
+    const getAltCode = (c) => {
+        if (!c) return c;
+        if (c.startsWith('GHOST-')) {
+            return 'GHOST-' + c.slice(6).replace(/O/g, '0');
+        }
+        return c.replace(/O/g, '0');
+    };
+
     let targetCode = null;
     if (licencas[inputCode]) {
         targetCode = inputCode;
     } else {
-        const altCode = inputCode.replace(/O/g, '0');
+        const altCode = getAltCode(inputCode);
         if (licencas[altCode]) {
             targetCode = altCode;
         }
@@ -118,7 +126,7 @@ module.exports = async (sock, msg, from, sender, text) => {
                 if (licencas[inputCode]) {
                     targetCode = inputCode;
                 } else {
-                    const altCode = inputCode.replace(/O/g, '0');
+                    const altCode = getAltCode(inputCode);
                     if (licencas[altCode]) {
                         targetCode = altCode;
                     }
