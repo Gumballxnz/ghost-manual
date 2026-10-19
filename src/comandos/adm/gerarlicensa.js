@@ -62,11 +62,14 @@ function parseDuracaoEGrupo(args) {
 }
 
 module.exports = async (sock, msg, from, sender, text) => {
-    if (text.startsWith(config.prefix + 'gerarlicensa') || text.startsWith(config.prefix + 'gerarlicenca')) {
+    const pfx = config.prefix || '.';
+    const cleanLower = (text || '').trim().toLowerCase();
+    const isGerar = cleanLower.startsWith(pfx + 'gerarlicensa') || cleanLower.startsWith(pfx + 'gerarlicenca');
+    if (isGerar) {
         const isOwner = isOwnerCheck(sender, msg);
         if (!isOwner) return true;
 
-        const args = text.split(' ').slice(1);
+        const args = text.trim().split(/\s+/).slice(1);
 
         const { tempo, indexGrupo, displayTempo } = parseDuracaoEGrupo(args);
 

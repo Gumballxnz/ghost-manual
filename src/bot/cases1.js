@@ -143,10 +143,12 @@ module.exports = async function (sock, msg) {
 
         const isConfigCmd = text.startsWith(config.prefix + 'aluguel') ||
             text.startsWith(config.prefix + 'ativarlicenca') ||
+            text.startsWith(config.prefix + 'ativarlicensa') ||
             text.startsWith(config.prefix + 'renovar') ||
             text.startsWith(config.prefix + 'entrar') ||
             text.startsWith(config.prefix + 'sair') ||
             text.toLowerCase().startsWith('ghost-') ||
+            /ghost-[a-z0-9]{4}-[a-z0-9]{4}/i.test(text) ||
             text === config.prefix + 'bot'
 
         const { getDataMocambique } = require('../utils/timezone')
