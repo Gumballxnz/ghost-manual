@@ -484,7 +484,7 @@ async function connectSocket() {
 
         console.log(`${YELLOW}⚠️ Parando o bot no PM2...${RESET}`)
         const { exec } = require('child_process')
-        exec('pm2 stop ghost-bot', (err) => {
+        exec('pm2 stop ghost-manual || pm2 stop ghost-bot', (err) => {
           if (err) console.error('Erro ao parar via PM2:', err.message)
           process.exit(0)
         })
@@ -681,7 +681,8 @@ async function connectSocket() {
               mudou = true
 
               const activeSock = global.primarySocket
-              if (activeSock) {
+              const isParticipating = global.participatingGroups && global.participatingGroups.has(groupId)
+              if (activeSock && isParticipating) {
                 try {
                   await activeSock.sendMessage(groupId, {
                     text: '🟢 *BOT REATIVADO!*\n\nO período de suspensão temporária acabou e o bot voltou a funcionar.'
@@ -699,6 +700,16 @@ async function connectSocket() {
 
             const activeSock = global.primarySocket
             if (!activeSock) continue
+
+            const isParticipating = global.participatingGroups && global.participatingGroups.has(groupId)
+            if (!isParticipating) {
+              if (tempoRestante <= 0 && !cfg.avisouExpiracao) {
+                groups[groupId].avisouExpiracao = true
+                mudou = true
+              }
+              continue
+            }
+
             const { getSuporteNumber } = require('./src/utils/configManager')
             const suporteNum = getSuporteNumber()
 
