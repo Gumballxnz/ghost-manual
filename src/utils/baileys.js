@@ -514,4 +514,4 @@ async function resolverParticipanteGrupo(sock, from, lidCru, msg = null) {
   return lidLimpo + '@lid'
 }
 
-module.exports = { getText, getSender, getSenderNumber, isAdmin, isOwnerCheck, isLeaderCheck, isSubdonoCheck, loadSubdonos, addSubdono, removeSubdono, getCargo, invalidateGroupCache, getGroupMetadataCached, resolverParticipanteGrupo }
+module.exports = { getText, getSender, getSenderNumber, isAdmin, isOwnerCheck, isLeaderCheck, isSubdonoCheck, loadSubdonos, addSubdono, removeSubdono, getSenderCandidateKeys, getCargo, invalidateGroupCache, getGroupMetadataCached, resolverParticipanteGrupo }
