@@ -1,11 +1,15 @@
-const config = require('../../data/config.json')
 const fs = require('fs')
 const path = require('path')
 
 const subdonosPath = path.join(__dirname, '../../data/subdonos.json')
 const configPath = path.join(__dirname, '../../data/config.json')
 
-let dynamicConfigCache = config
+let dynamicConfigCache = {}
+try {
+  if (fs.existsSync(configPath)) {
+    dynamicConfigCache = JSON.parse(fs.readFileSync(configPath, 'utf8'))
+  }
+} catch {}
 let lastConfigReadTime = 0
 const CONFIG_READ_TTL = 3000
 
