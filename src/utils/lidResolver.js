@@ -83,6 +83,12 @@ function saveSubdonoLids(lids) {
     const dir = path.dirname(subdonoLidsPath)
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
     fs.writeFileSync(subdonoLidsPath, JSON.stringify(lids, null, 2), 'utf8')
+    try {
+      const { putFirebase, FIREBASE_DB_URL } = require('./firebaseConfig')
+      if (FIREBASE_DB_URL) {
+        putFirebase('bot_data/subdonoLids', lids).catch(() => {})
+      }
+    } catch {}
   } catch (e) {
     console.error('[SUBDONO-LID] Erro ao salvar subdonoLids:', e.message)
   }
@@ -286,6 +292,12 @@ async function sincronizarLidsDonoESubdono(sock) {
     try {
       fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8')
       console.log('[LID-SYNC] 💾 config.json salvo com novos ownerLids!')
+      try {
+        const { putFirebase, FIREBASE_DB_URL } = require('./firebaseConfig')
+        if (FIREBASE_DB_URL) {
+          putFirebase('bot_data/ownerLids', config.ownerLids).catch(() => {})
+        }
+      } catch {}
     } catch (e) {
       console.error('[LID-SYNC] Erro ao salvar config.json:', e.message)
     }
