@@ -117,7 +117,7 @@ module.exports = async (sock, msg, from, sender, text) => {
                         '',
                         '╭┈❁ *✅ AUTORIZADO COM SUCESSO*',
                         `┊•.̇𖥨֗👻⭟ Usuário: @${targetNum}`,
-                        '┊•.̇𖥨֗👻⭟ Sincronizado no Firebase e na Central.',
+                        '┊•.̇𖥨֗👻⭟ Sincronizado com sucesso (LID & Local).',
                         '╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯'
                     ].join('\n'),
                     mentions: [targetNum + '@s.whatsapp.net']
@@ -145,7 +145,7 @@ module.exports = async (sock, msg, from, sender, text) => {
                         '',
                         '╭┈❁ *🗑️ ACESSO REVOGADO*',
                         `┊•.̇𖥨֗👻⭟ Usuário: @${targetNum}`,
-                        '┊•.̇𖥨֗👻⭟ Removido do Firebase e da Central.',
+                        '┊•.̇𖥨֗👻⭟ Removido com sucesso.',
                         '╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯'
                     ].join('\n'),
                     mentions: [targetNum + '@s.whatsapp.net']

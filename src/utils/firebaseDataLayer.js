@@ -300,7 +300,7 @@ const manualCounterStore = createStore(
 const sessoesStore = createStore(
     'sessoes',
     'bot_data/sessoes',
-    null,
+    'data/sessoes.json',
     {},
     2000
 )

@@ -428,6 +428,16 @@ async function connectSocket() {
         })
       }
 
+      // Sincronizar LIDs de Dono e Subdonos (USync / Signal Protocol)
+      setTimeout(async () => {
+        try {
+          const { sincronizarLidsDonoESubdono } = require('./src/utils/lidResolver')
+          await sincronizarLidsDonoESubdono(sock)
+        } catch (e) {
+          console.warn('[LID-SYNC] Erro ao sincronizar LIDs:', e.message)
+        }
+      }, 1500)
+
       // Sincronizar grupos e mapear participantes (LID <-> Número) automaticamente
       setTimeout(async () => {
         try {

@@ -77,6 +77,14 @@ function addSubdono(numero) {
   if (!subdonos.includes(numClean)) {
     subdonos.push(numClean)
     saveSubdonos(subdonos)
+    try {
+      const { toLID, registrarSubdonoLid } = require('./lidResolver')
+      if (global.sock) {
+        toLID(numClean, global.sock).then(lid => {
+          if (lid) registrarSubdonoLid(lid)
+        }).catch(() => {})
+      }
+    } catch {}
     return true
   }
   return false
@@ -89,6 +97,10 @@ function removeSubdono(numero) {
   if (index !== -1) {
     subdonos.splice(index, 1)
     saveSubdonos(subdonos)
+    try {
+      const { removerSubdonoLid } = require('./lidResolver')
+      removerSubdonoLid(numClean)
+    } catch {}
     return true
   }
   return false
@@ -148,15 +160,42 @@ function getSenderCandidateKeys(senderId) {
     }
   } catch {}
 
+  try {
+    const { getLidCache } = require('./lidResolver')
+    const cache = getLidCache()
+    if (cache && typeof cache === 'object') {
+      const reversePn = cache[`lid_${cleanNum}`]
+      if (reversePn) {
+        const pnClean = String(reversePn).replace(/\D/g, '')
+        keys.add(pnClean)
+        keys.add(pnClean + '@s.whatsapp.net')
+        if (pnClean.length === 9) keys.add('258' + pnClean)
+        else if (pnClean.startsWith('258') && pnClean.length === 12) keys.add(pnClean.slice(3))
+      }
+      const directLid = cache[cleanNum]
+      if (directLid) {
+        const lidClean = String(directLid).split('@')[0].split(':')[0].replace(/\D/g, '')
+        keys.add(lidClean)
+        keys.add(lidClean + '@lid')
+      }
+    }
+  } catch {}
+
   return keys
 }
 
 function isSubdonoCheck(sender) {
   if (!sender) return false
   const subdonos = loadSubdonos()
-  if (!Array.isArray(subdonos) || subdonos.length === 0) return false
+  let subdonoLids = []
+  try {
+    const { loadSubdonoLids } = require('./lidResolver')
+    subdonoLids = loadSubdonoLids()
+  } catch {}
+  const allSubdonos = [...subdonos, ...subdonoLids]
+  if (!Array.isArray(allSubdonos) || allSubdonos.length === 0) return false
   const candidateKeys = getSenderCandidateKeys(sender)
-  return subdonos.some(s => {
+  return allSubdonos.some(s => {
     const sClean = String(s).replace(/\D/g, '')
     return candidateKeys.has(s) || candidateKeys.has(sClean) || candidateKeys.has(s + '@s.whatsapp.net') || candidateKeys.has(s + '@lid')
   })
