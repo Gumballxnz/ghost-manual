@@ -857,6 +857,13 @@ const { preloadAll } = require('./src/utils/firebaseDataLayer')
 
 async function iniciarBots() {
   try {
+    const { verificarEInstalarDependencias } = require('./src/utils/verificarDependencias')
+    verificarEInstalarDependencias()
+  } catch (errDeps) {
+    console.warn('[START] Verificação de dependências ignorada:', errDeps.message)
+  }
+
+  try {
     await preloadAll()
   } catch (errPreload) {
     console.error('[START] Erro ao pré-carregar dados do Firebase:', errPreload.message)

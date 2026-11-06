@@ -53,6 +53,14 @@ ${C.magenta}╭─────────────────────�
 
   try {
     // ==========================================
+    // ETAPA 0: VERIFICAÇÃO DE DEPENDÊNCIAS
+    // ==========================================
+    try {
+      const { verificarEInstalarDependencias } = require('./src/utils/verificarDependencias')
+      verificarEInstalarDependencias()
+    } catch {}
+
+    // ==========================================
     // ETAPA 1: CONFIGURAÇÕES DO BOT E DONO
     // ==========================================
     console.log(`${C.yellow}📋 ETAPA 1: Configuração Básica do Bot${C.reset}\n`)
