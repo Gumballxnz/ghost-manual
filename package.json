@@ -41,6 +41,8 @@
     "@whiskeysockets/baileys": "^6.7.21",
     "axios": "^1.10.0",
     "jimp": "0.16.1",
+    "node-tesseract-ocr": "^2.2.1",
+    "pdf-parse": "^2.4.5",
     "pdfkit": "^0.19.1",
     "pino": "^8.19.0",
     "qrcode": "^1.5.4"
