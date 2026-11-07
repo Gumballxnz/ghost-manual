@@ -106,7 +106,23 @@ module.exports = async (sock, msg, from, sender, text) => {
             return true
         }
 
-        if (action === 'add') {
+        // Resolução inteligente se foi passado ou mencionado um LID
+        try {
+            const { buscarNumero } = require('../../bot/core')
+            const numReal = buscarNumero(targetNum)
+            if (numReal && numReal.length >= 8) {
+                targetNum = numReal
+            } else if (targetNum.length >= 14 || targetNum.startsWith('178') || targetNum.startsWith('159')) {
+                const { resolverParticipanteGrupo } = require('../../utils/baileys')
+                const res = await resolverParticipanteGrupo(sock, from, targetNum, msg)
+                if (res) {
+                    const clean = res.split('@')[0].split(':')[0].replace(/\D/g, '')
+                    if (clean && clean.length >= 8 && clean !== targetNum) targetNum = clean
+                }
+            }
+        } catch {}
+
+        if (action === 'add' || action === 'autorizar' || action === 'adicionar') {
             const adicionado = addSubdono(targetNum)
             if (adicionado) {
                 await sock.sendMessage(from, {

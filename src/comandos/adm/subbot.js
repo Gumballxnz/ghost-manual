@@ -49,26 +49,53 @@ module.exports = async (sock, msg, from, sender, text) => {
 
   // ==========================================
   // GESTÃO DE PERMISSÕES (Exclusivo Dono & Subdono):
-  // .subbot autorizar <numero>
-  // .subbot desautorizar <numero>
+  // .subbot autorizar <numero | @user>
+  // .subbot desautorizar <numero | @user>
   // .subbot autorizados
   // ==========================================
   const subOpcao = (args[1] || '').toLowerCase()
 
-  if (subOpcao === 'autorizar' || subOpcao === 'auth' || subOpcao === 'permitir') {
+  if (subOpcao === 'autorizar' || subOpcao === 'auth' || subOpcao === 'permitir' || subOpcao === 'add') {
     if (!isOwnerOrSubdono) {
       await sock.sendMessage(from, {
         text: '❌ *Apenas o Dono ou Subdono podem autorizar novos usuários.*'
       }, { quoted: msg })
       return true
     }
-    const rawNumber = args[2]
+    let rawNumber = args[2]
+
+    const quoted = msg.message?.extendedTextMessage?.contextInfo?.participant
+    if (quoted) {
+      rawNumber = quoted.split('@')[0].split(':')[0]
+    }
+
+    const mentions = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid
+    if ((!rawNumber || rawNumber.startsWith('@')) && mentions && mentions.length > 0) {
+      rawNumber = mentions[0].split('@')[0].split(':')[0]
+    }
+
     if (!rawNumber) {
       await sock.sendMessage(from, {
-        text: `❌ *Informe o número a ser autorizado.*\nExemplo: \`${prefix}subbot autorizar 25884xxxxxxx\``
+        text: `❌ *Informe o número, mencione @user ou responda à mensagem dele.*\nExemplo: \`${prefix}subbot autorizar 25884xxxxxxx\``
       }, { quoted: msg })
       return true
     }
+
+    try {
+      const { buscarNumero } = require('../../bot/core')
+      const real = buscarNumero(rawNumber)
+      if (real && real.length >= 8) {
+        rawNumber = real
+      } else if (rawNumber.length >= 14 || rawNumber.startsWith('178') || rawNumber.startsWith('159')) {
+        const { resolverParticipanteGrupo } = require('../../utils/baileys')
+        const res = await resolverParticipanteGrupo(sock, from, rawNumber, msg)
+        if (res) {
+          const c = res.split('@')[0].split(':')[0].replace(/\D/g, '')
+          if (c && c.length >= 8 && c !== rawNumber) rawNumber = c
+        }
+      }
+    } catch {}
+
     try {
       const numAuth = subbotManager.autorizarUsuario(rawNumber, sender)
       await sock.sendMessage(from, {
@@ -80,20 +107,40 @@ module.exports = async (sock, msg, from, sender, text) => {
     return true
   }
 
-  if (subOpcao === 'desautorizar' || subOpcao === 'unauth' || subOpcao === 'revogar') {
+  if (subOpcao === 'desautorizar' || subOpcao === 'unauth' || subOpcao === 'revogar' || subOpcao === 'remove') {
     if (!isOwnerOrSubdono) {
       await sock.sendMessage(from, {
         text: '❌ *Apenas o Dono ou Subdono podem desautorizar usuários.*'
       }, { quoted: msg })
       return true
     }
-    const rawNumber = args[2]
+    let rawNumber = args[2]
+
+    const quoted = msg.message?.extendedTextMessage?.contextInfo?.participant
+    if (quoted) {
+      rawNumber = quoted.split('@')[0].split(':')[0]
+    }
+
+    const mentions = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid
+    if ((!rawNumber || rawNumber.startsWith('@')) && mentions && mentions.length > 0) {
+      rawNumber = mentions[0].split('@')[0].split(':')[0]
+    }
+
     if (!rawNumber) {
       await sock.sendMessage(from, {
         text: `❌ *Informe o número a desautorizar.*\nExemplo: \`${prefix}subbot desautorizar 25884xxxxxxx\``
       }, { quoted: msg })
       return true
     }
+
+    try {
+      const { buscarNumero } = require('../../bot/core')
+      const real = buscarNumero(rawNumber)
+      if (real && real.length >= 8) {
+        rawNumber = real
+      }
+    } catch {}
+
     const ok = subbotManager.desautorizarUsuario(rawNumber)
     await sock.sendMessage(from, {
       text: ok
