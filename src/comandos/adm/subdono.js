@@ -141,16 +141,16 @@ module.exports = async (sock, msg, from, sender, text) => {
             } else {
                 await sock.sendMessage(from, {
                     text: [
-                        '╭┈⊰ 👻 『 *AVISO* 』',
+                        '╭┈⊰ 👻 『 *AVISO: JÁ CADASTRADO* 』',
                         '┊🤖 GHOST BOT',
                         '╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯',
                         '',
-                        `ℹ️ @${targetNum} já consta na lista de Subdonos.`
+                        `ℹ️ O usuário @${targetNum} já é um Subdono oficial do bot!`
                     ].join('\n'),
                     mentions: [targetNum + '@s.whatsapp.net']
                 }, { quoted: msg })
             }
-        } else if (action === 'del' || action === 'remove') {
+        } else if (action === 'del' || action === 'remove' || action === 'remover' || action === 'desautorizar') {
             const removido = removeSubdono(targetNum)
             if (removido) {
                 await sock.sendMessage(from, {
@@ -161,7 +161,7 @@ module.exports = async (sock, msg, from, sender, text) => {
                         '',
                         '╭┈❁ *🗑️ ACESSO REVOGADO*',
                         `┊•.̇𖥨֗👻⭟ Usuário: @${targetNum}`,
-                        '┊•.̇𖥨֗👻⭟ Removido com sucesso.',
+                        '┊•.̇𖥨֗👻⭟ Subdono removido com sucesso.',
                         '╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯'
                     ].join('\n'),
                     mentions: [targetNum + '@s.whatsapp.net']
@@ -169,11 +169,11 @@ module.exports = async (sock, msg, from, sender, text) => {
             } else {
                 await sock.sendMessage(from, {
                     text: [
-                        '╭┈⊰ 👻 『 *AVISO* 』',
+                        '╭┈⊰ 👻 『 *AVISO: NÃO ENCONTRADO* 』',
                         '┊🤖 GHOST BOT',
                         '╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯',
                         '',
-                        `❌ @${targetNum} não está na lista de Subdonos.`
+                        `⚠️ O usuário @${targetNum} nunca foi cadastrado como subdono ou já não consta na lista.`
                     ].join('\n'),
                     mentions: [targetNum + '@s.whatsapp.net']
                 }, { quoted: msg })

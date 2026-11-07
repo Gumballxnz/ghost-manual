@@ -97,10 +97,28 @@ module.exports = async (sock, msg, from, sender, text) => {
     } catch {}
 
     try {
-      const numAuth = subbotManager.autorizarUsuario(rawNumber, sender)
-      await sock.sendMessage(from, {
-        text: `✅ *Usuário Autorizado!*\n\n📱 Número: *+${numAuth}*\nAgora este usuário tem permissão para usar \`${prefix}conect\` e gerenciar seus sub-bots.`
-      }, { quoted: msg })
+      const resultado = subbotManager.autorizarUsuario(rawNumber, sender)
+      if (resultado.status === 'ja_autorizado') {
+        await sock.sendMessage(from, {
+          text: [
+            '╭┈⊰ 👻 『 *AVISO: JÁ AUTORIZADO* 』',
+            '┊',
+            `┊•.̇𖥨֗ℹ️⭟ O usuário *+${resultado.numero}* já está na lista!`,
+            '┊      Ele já possui permissão ativa para gerenciar sub-bots.',
+            '╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯'
+          ].join('\n')
+        }, { quoted: msg })
+      } else {
+        await sock.sendMessage(from, {
+          text: [
+            '╭┈⊰ 👻 『 *USUÁRIO AUTORIZADO* 』',
+            '┊',
+            `┊•.̇𖥨֗✅⭟ Usuário *+${resultado.numero}* autorizado com sucesso!`,
+            `┊•.̇𖥨֗📱⭟ Agora ele tem permissão para usar \`${prefix}conect\` e gerenciar sub-bots.`,
+            '╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯'
+          ].join('\n')
+        }, { quoted: msg })
+      }
     } catch (e) {
       await sock.sendMessage(from, { text: `❌ ${e.message}` }, { quoted: msg })
     }
@@ -141,12 +159,28 @@ module.exports = async (sock, msg, from, sender, text) => {
       }
     } catch {}
 
-    const ok = subbotManager.desautorizarUsuario(rawNumber)
-    await sock.sendMessage(from, {
-      text: ok
-        ? `🗑️ *Autorização revogada com sucesso para +${rawNumber.replace(/\D/g, '')}!*`
-        : `⚠️ *O número informado não constava na lista de autorizados.*`
-    }, { quoted: msg })
+    const resultado = subbotManager.desautorizarUsuario(rawNumber)
+    if (resultado.status === 'nunca_autorizado') {
+      await sock.sendMessage(from, {
+        text: [
+          '╭┈⊰ 👻 『 *AVISO: NÃO AUTORIZADO* 』',
+          '┊',
+          `┊•.̇𖥨֗⚠️⭟ O usuário *+${resultado.numero}* nunca foi autorizado`,
+          '┊      ou não consta na lista de permissões!',
+          '╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯'
+        ].join('\n')
+      }, { quoted: msg })
+    } else {
+      await sock.sendMessage(from, {
+        text: [
+          '╭┈⊰ 👻 『 *AUTORIZAÇÃO REVOGADA* 』',
+          '┊',
+          `┊•.̇𖥨֗🗑️⭟ O usuário *+${resultado.numero}* foi removido com sucesso!`,
+          '┊      Ele não tem mais acesso aos comandos de sub-bots.',
+          '╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯'
+        ].join('\n')
+      }, { quoted: msg })
+    }
     return true
   }
 

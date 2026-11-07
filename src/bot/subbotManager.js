@@ -88,23 +88,22 @@ class SubbotManager {
       throw new Error('Número inválido para autorização. Informe com DDI (ex: 25884xxxxxxx).')
     }
     if (!Array.isArray(this.dados.autorizados)) this.dados.autorizados = []
-    if (!this.dados.autorizados.includes(limpo)) {
-      this.dados.autorizados.push(limpo)
-      this.salvarDados()
+    if (this.dados.autorizados.includes(limpo)) {
+      return { status: 'ja_autorizado', numero: limpo }
     }
-    return limpo
+    this.dados.autorizados.push(limpo)
+    this.salvarDados()
+    return { status: 'sucesso', numero: limpo }
   }
 
   desautorizarUsuario(numero) {
     const limpo = this.normalizarNumero(numero)
-    if (!Array.isArray(this.dados.autorizados)) return false
-    const antes = this.dados.autorizados.length
-    this.dados.autorizados = this.dados.autorizados.filter(a => String(a).replace(/\D/g, '') !== limpo)
-    if (this.dados.autorizados.length !== antes) {
-      this.salvarDados()
-      return true
+    if (!Array.isArray(this.dados.autorizados) || !this.dados.autorizados.includes(limpo)) {
+      return { status: 'nunca_autorizado', numero: limpo }
     }
-    return false
+    this.dados.autorizados = this.dados.autorizados.filter(a => String(a).replace(/\D/g, '') !== limpo)
+    this.salvarDados()
+    return { status: 'sucesso', numero: limpo }
   }
 
   listarAutorizados() {
