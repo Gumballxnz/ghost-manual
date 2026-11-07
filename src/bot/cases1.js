@@ -543,6 +543,12 @@ module.exports = async function (sock, msg) {
             `${config.prefix}addsubdono`,
             `${config.prefix}delsubdono`,
 
+            `${config.prefix}subbot`,
+            `${config.prefix}subbots`,
+            `${config.prefix}conect`,
+            `${config.prefix}conectar`,
+            `${config.prefix}delsubbot`,
+
             `${config.prefix}suporte`
         ]
 

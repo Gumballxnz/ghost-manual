@@ -21,6 +21,7 @@ const antistatus = require('./src/middlewares/antistatus')
 const antilink = require('./src/middlewares/antilink')
 const { verificarAutoUpdate } = require('./src/bot/autoUpdate')
 const { publicarPresenca } = require('./src/utils/clusterPresenca')
+const subbotManager = require('./src/bot/subbotManager')
 
 const MessageQueue = require('./src/utils/queue')
 const messageQueue = new MessageQueue(5, 30)
@@ -244,6 +245,100 @@ let primeiraConexaoDoProcesso = true
 const MAX_RECONNECT_DELAY = 30000
 let chosenMethod = null
 let pairingTimeout = null
+
+async function processarMensagemIndividual(sock, msg) {
+  if (!msg || !msg.message) return
+
+  if (msg.key?.id && botOutgoingMessageIds.has(msg.key.id)) {
+    return
+  }
+
+  if (msg.key && msg.key.remoteJid === 'status@broadcast') {
+    return
+  }
+
+  const rawTimestamp = msg.messageTimestamp ? (typeof msg.messageTimestamp === 'object' ? msg.messageTimestamp.low : msg.messageTimestamp) : 0
+  const msgTimestamp = Number(rawTimestamp) || 0
+  const agoraSec = Math.floor(Date.now() / 1000)
+
+  if (msgTimestamp > 0 && (msgTimestamp < (bootTime - 120) || msgTimestamp < (agoraSec - 3600))) {
+    return
+  }
+
+  const remoteJid = msg.key?.remoteJid || ''
+
+  if (remoteJid.endsWith('@g.us')) {
+    global.primaryGroups.add(remoteJid)
+
+    // Failover e Roteamento Inteligente:
+    // Se a mensagem veio pelo socket principal, mas este grupo possui um sub-bot ativo e conectado,
+    // o bot principal ignora o processamento para que o sub-bot atenda o grupo sem respostas duplicadas.
+    if (sock === global.primarySocket && subbotManager.temSubbotAtivoNoGrupo(remoteJid)) {
+      return
+    }
+  }
+
+  const msgId = msg.key?.id
+  if (msgId) {
+    if (globalProcessedMessages.has(msgId)) return
+    globalProcessedMessages.add(msgId)
+    setTimeout(() => globalProcessedMessages.delete(msgId), MESSAGE_CACHE_TIMEOUT)
+  }
+
+  const bodyCheck = msg.message?.conversation || msg.message?.extendedTextMessage?.text || msg.message?.imageMessage?.caption || msg.message?.documentMessage?.caption || ''
+  if (bodyCheck && !msg.key?.fromMe) {
+    console.log(`[MSG-IN] De: ${remoteJid} -> "${bodyCheck.slice(0, 50).replace(/\n/g, ' ')}"`)
+  }
+
+  const isBotResponseAlert = /Pagamento Não Confirmado|NÚMERO DE DESTINO NÃO AUTORIZADO|RECIBO JÁ UTILIZADO|COMPROVANTE ARQUIVADO|Depósito confirmado|FORMAS DE PAGAMENTO|GRUPO SEM CONTAS|SMS ainda não recebido|Não consegui ler o valor/i.test(bodyCheck)
+  if (msg.key.fromMe && isBotResponseAlert) return
+
+  const isComprovanteCheck = /^(?:Confirmado|ID da transacao|ID\s*Trans|Transaction ID|Transferiste|You transfered)/i.test(bodyCheck.trim()) ||
+                             /(?:Transferiste|You transfered)\s+[\d.,]+\s*MT/i.test(bodyCheck)
+  const hasMediaMsg = !!(msg.message?.imageMessage || msg.message?.documentMessage)
+  if (msg.key.fromMe && !bodyCheck.startsWith(config.prefix) && !isComprovanteCheck && !hasMediaMsg) return
+
+  async function marcarComoLida(s, key) {
+    if (!s || !key || key.fromMe) return
+    try {
+      if (typeof s.sendReceipt === 'function') {
+        await s.sendReceipt(key.remoteJid, key.participant, [key.id], 'read')
+      } else if (typeof s.readMessages === 'function') {
+        await s.readMessages([key])
+      }
+    } catch {
+      try {
+        if (typeof s.readMessages === 'function') {
+          await s.readMessages([key])
+        }
+      } catch {}
+    }
+  }
+
+  try {
+    const isPV = remoteJid && !remoteJid.endsWith('@g.us') && !remoteJid.endsWith('@broadcast')
+    if (isPV && sock && msg.key && !msg.key.fromMe) {
+      marcarComoLida(sock, msg.key).catch(() => {})
+    }
+  } catch {}
+
+  try {
+    antiPvChato(sock, msg).catch(() => {})
+
+    const foiBanido = await antistatus(sock, msg)
+    if (foiBanido) return
+
+    const linkBanido = await antilink(sock, msg)
+    if (linkBanido) return
+
+    const handled = await cases1(sock, msg)
+    if (!handled) {
+      await cases(sock, msg)
+    }
+  } catch (msgErr) {
+    console.error(`[MSG ERROR] Erro isolado no processamento da mensagem ${msgId || 'desconhecida'}:`, msgErr.message)
+  }
+}
 
 async function connectSocket() {
   const sessionFolder = 'session'
@@ -507,93 +602,7 @@ async function connectSocket() {
     }
   })
 
-  async function processarMensagemIndividual(sock, msg) {
-    if (!msg || !msg.message) return
-
-    if (msg.key?.id && botOutgoingMessageIds.has(msg.key.id)) {
-      return
-    }
-
-    if (msg.key && msg.key.remoteJid === 'status@broadcast') {
-      return
-    }
-
-    const rawTimestamp = msg.messageTimestamp ? (typeof msg.messageTimestamp === 'object' ? msg.messageTimestamp.low : msg.messageTimestamp) : 0
-    const msgTimestamp = Number(rawTimestamp) || 0
-    const agoraSec = Math.floor(Date.now() / 1000)
-
-    if (msgTimestamp > 0 && (msgTimestamp < (bootTime - 120) || msgTimestamp < (agoraSec - 3600))) {
-      return
-    }
-
-    const remoteJid = msg.key?.remoteJid || ''
-
-    if (remoteJid.endsWith('@g.us')) {
-      global.primaryGroups.add(remoteJid)
-    }
-
-    const msgId = msg.key?.id
-    if (msgId) {
-      if (globalProcessedMessages.has(msgId)) return
-      globalProcessedMessages.add(msgId)
-      setTimeout(() => globalProcessedMessages.delete(msgId), MESSAGE_CACHE_TIMEOUT)
-    }
-
-    const bodyCheck = msg.message?.conversation || msg.message?.extendedTextMessage?.text || msg.message?.imageMessage?.caption || msg.message?.documentMessage?.caption || ''
-    if (bodyCheck && !msg.key?.fromMe) {
-      console.log(`[MSG-IN] De: ${remoteJid} -> "${bodyCheck.slice(0, 50).replace(/\n/g, ' ')}"`)
-    }
-
-    const isBotResponseAlert = /Pagamento Não Confirmado|NÚMERO DE DESTINO NÃO AUTORIZADO|RECIBO JÁ UTILIZADO|COMPROVANTE ARQUIVADO|Depósito confirmado|FORMAS DE PAGAMENTO|GRUPO SEM CONTAS|SMS ainda não recebido|Não consegui ler o valor/i.test(bodyCheck)
-    if (msg.key.fromMe && isBotResponseAlert) return
-
-    const isComprovanteCheck = /^(?:Confirmado|ID da transacao|ID\s*Trans|Transaction ID|Transferiste|You transfered)/i.test(bodyCheck.trim()) ||
-                               /(?:Transferiste|You transfered)\s+[\d.,]+\s*MT/i.test(bodyCheck)
-    const hasMediaMsg = !!(msg.message?.imageMessage || msg.message?.documentMessage)
-    if (msg.key.fromMe && !bodyCheck.startsWith(config.prefix) && !isComprovanteCheck && !hasMediaMsg) return
-
-    async function marcarComoLida(s, key) {
-      if (!s || !key || key.fromMe) return
-      try {
-        if (typeof s.sendReceipt === 'function') {
-          await s.sendReceipt(key.remoteJid, key.participant, [key.id], 'read')
-        } else if (typeof s.readMessages === 'function') {
-          await s.readMessages([key])
-        }
-      } catch {
-        try {
-          if (typeof s.readMessages === 'function') {
-            await s.readMessages([key])
-          }
-        } catch {}
-      }
-    }
-
-    try {
-      const isPV = remoteJid && !remoteJid.endsWith('@g.us') && !remoteJid.endsWith('@broadcast')
-      if (isPV && sock && msg.key && !msg.key.fromMe) {
-        marcarComoLida(sock, msg.key).catch(() => {})
-      }
-    } catch {}
-
-    try {
-
-      antiPvChato(sock, msg).catch(() => {})
-
-      const foiBanido = await antistatus(sock, msg)
-      if (foiBanido) return
-
-      const linkBanido = await antilink(sock, msg)
-      if (linkBanido) return
-
-      const handled = await cases1(sock, msg)
-      if (!handled) {
-        await cases(sock, msg)
-      }
-    } catch (msgErr) {
-      console.error(`[MSG ERROR] Erro isolado no processamento da mensagem ${msgId || 'desconhecida'}:`, msgErr.message)
-    }
-  }
+  subbotManager.setProcessarMensagemFn(processarMensagemIndividual)
 
   sock.ev.on("messages.upsert", async (chatUpdate) => {
     try {
@@ -882,6 +891,13 @@ async function iniciarBots() {
       console.log(`[START] Execute via terminal para parear: node index.js --pair <numero> ou node index.js --qr`)
     }
   }
+
+  // Inicializar sub-bots salvos automaticamente em segundo plano
+  setTimeout(() => {
+    subbotManager.iniciarSubbotsExistentes(processarMensagemIndividual).catch(err => {
+      console.error('[START] Erro ao restaurar sub-bots:', err.message)
+    })
+  }, 4000)
 }
 
 iniciarBots().catch(err => {

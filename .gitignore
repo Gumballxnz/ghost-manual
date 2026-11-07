@@ -2,6 +2,8 @@ node_modules
 session/
 session-backup/
 session-*/
+session_subbots/
+session_subbots-*/
 auth_info_baileys/
 .env
 .env.local
