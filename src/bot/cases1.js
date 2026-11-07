@@ -549,6 +549,15 @@ module.exports = async function (sock, msg) {
             `${config.prefix}conectar`,
             `${config.prefix}delsubbot`,
             `${config.prefix}meusgrupos`,
+            `${config.prefix}qr`,
+            `${config.prefix}qrcode`,
+            `${config.prefix}menuconect`,
+            `${config.prefix}painelconect`,
+            `${config.prefix}conexoes`,
+            `${config.prefix}statusconect`,
+            `${config.prefix}desconectar`,
+            `${config.prefix}desconect`,
+            `${config.prefix}desconectarbot`,
 
             `${config.prefix}suporte`
         ]

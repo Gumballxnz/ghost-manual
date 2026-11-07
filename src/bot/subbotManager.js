@@ -11,6 +11,7 @@ const {
 const { getGroupMetadataCached, isLeaderCheck, isSubdonoCheck, getSenderCandidateKeys } = require('../utils/baileys')
 const { limparArquivosSessao } = require('../utils/sessionPruner')
 const MessageQueue = require('../utils/queue')
+const QRCode = require('qrcode')
 
 const SESSIONS_DIR = path.resolve(__dirname, '../../session_subbots')
 const DATA_FILE = path.resolve(__dirname, '../../data/subbots.json')
@@ -228,16 +229,22 @@ class SubbotManager {
   }
 
   async conectarSubbot({
-    numero,
+    numero = '',
+    method = 'code',
     grupoId = null,
     autorJid = '',
     onPairingCode = null,
+    onQrCode = null,
     onConnected = null,
     onError = null
   }) {
-    const num = this.normalizarNumero(numero)
-    if (!num || num.length < 8) {
+    let num = this.normalizarNumero(numero)
+    if (method === 'code' && (!num || num.length < 8)) {
       throw new Error('Número de telefone inválido. Informe o número com DDI (ex: 25884xxxxxxx).')
+    }
+
+    if (!num) {
+      num = grupoId ? 'temp_' + String(grupoId).replace(/[^a-zA-Z0-9]/g, '') : 'temp_' + Date.now()
     }
 
     if (!fs.existsSync(SESSIONS_DIR)) {
@@ -257,11 +264,11 @@ class SubbotManager {
         criadoEm: Date.now(),
         criadoPor: autorJid,
         ativo: true,
-        status: 'pareando'
+        status: method === 'qr' ? 'aguardando_qr' : 'pareando'
       }
     } else {
       this.dados.subbots[num].ativo = true
-      this.dados.subbots[num].status = 'pareando'
+      this.dados.subbots[num].status = method === 'qr' ? 'aguardando_qr' : 'pareando'
       if (grupoId && !this.dados.subbots[num].grupos.includes(grupoId)) {
         this.dados.subbots[num].grupos.push(grupoId)
       }
@@ -302,9 +309,11 @@ class SubbotManager {
     const subbotEntry = {
       sock,
       numero: num,
+      method,
       grupos: this.dados.subbots[num].grupos || [],
-      status: state.creds.registered ? 'conectando' : 'pareando',
+      status: state.creds.registered ? 'conectando' : (method === 'qr' ? 'aguardando_qr' : 'pareando'),
       reconnectAttempts: 0,
+      attempts: 0,
       queue,
       grupoSolicitante: grupoId
     }
@@ -339,8 +348,8 @@ class SubbotManager {
       }, high, timeoutMs)
     }
 
-    // Solicitar código de pareamento caso não esteja registrado
-    if (!sock.authState.creds.registered) {
+    // Solicitar código de pareamento caso não esteja registrado e method seja 'code'
+    if (!sock.authState.creds.registered && method === 'code') {
       const timeoutKey = `pairing_${num}`
       if (this.pairingTimeouts.has(timeoutKey)) {
         clearTimeout(this.pairingTimeouts.get(timeoutKey))
@@ -375,13 +384,61 @@ class SubbotManager {
     sock.ev.on('creds.update', saveCreds)
 
     sock.ev.on('connection.update', async (update) => {
-      const { connection, lastDisconnect } = update
+      const { connection, lastDisconnect, qr } = update
+
+      // Evento QR Code
+      if (qr && method === 'qr') {
+        subbotEntry.attempts = (subbotEntry.attempts || 0) + 1
+        if (subbotEntry.attempts > 5) {
+          console.log(`[SUBBOT ${num}] Limite de tentativas de QR atingido.`)
+          if (typeof onError === 'function') {
+            onError(new Error('Limite de 5 tentativas atingido. Execute .qr para tentar novamente.'))
+          }
+          this.desconectarSubbot(num, true).catch(() => {})
+          return
+        }
+        try {
+          const qrBuffer = await QRCode.toBuffer(qr, { scale: 8, margin: 2 })
+          if (typeof onQrCode === 'function') {
+            onQrCode(qrBuffer, qr, subbotEntry.attempts, 5)
+          }
+        } catch (qrErr) {
+          console.error(`[SUBBOT ${num}] Erro ao gerar buffer do QR:`, qrErr.message)
+        }
+      }
 
       if (connection === 'open') {
+        let connectedNum = sock.user?.id ? sock.user.id.split(':')[0].split('@')[0].replace(/\D/g, '') : num
+
+        // Se o identificador inicial era temporário (ex: temp_...), atualiza para o número real conectado
+        if (connectedNum && connectedNum !== num) {
+          this.dados.subbots[connectedNum] = {
+            numero: connectedNum,
+            grupos: subbotEntry.grupos,
+            criadoEm: Date.now(),
+            criadoPor: autorJid,
+            ativo: true,
+            status: 'online'
+          }
+          delete this.dados.subbots[num]
+          this.salvarDados()
+
+          this.activeSubbots.set(connectedNum, subbotEntry)
+          this.activeSubbots.delete(num)
+          subbotEntry.numero = connectedNum
+
+          for (const gid of subbotEntry.grupos) {
+            this.groupToSubbot.set(gid, connectedNum)
+          }
+          num = connectedNum
+        }
+
         subbotEntry.status = 'online'
         subbotEntry.reconnectAttempts = 0
-        this.dados.subbots[num].status = 'online'
-        this.salvarDados()
+        if (this.dados.subbots[num]) {
+          this.dados.subbots[num].status = 'online'
+          this.salvarDados()
+        }
 
         console.log(`\n==================================================`)
         console.log(`🎉 [SUBBOT CONECTADO] Sub-Bot +${num} está ONLINE!`)
@@ -397,8 +454,10 @@ class SubbotManager {
             }
             this.groupToSubbot.set(gid, num)
           }
-          this.dados.subbots[num].grupos = subbotEntry.grupos
-          this.salvarDados()
+          if (this.dados.subbots[num]) {
+            this.dados.subbots[num].grupos = subbotEntry.grupos
+            this.salvarDados()
+          }
         } catch (e) {
           console.warn(`[SUBBOT ${num}] Aviso ao carregar grupos:`, e.message)
         }
