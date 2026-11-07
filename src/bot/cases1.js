@@ -329,7 +329,12 @@ module.exports = async function (sock, msg) {
     }
 
     if (text === config.prefix + 'menu') {
-        await menu(sock, msg, from)
+        await menu(sock, msg, from, sender)
+        return true
+    }
+
+    if (text === config.prefix + 'menumembro' || text === config.prefix + 'menumemb' || text === config.prefix + 'menucomum') {
+        await menu(sock, msg, from, sender, { forceMember: true })
         return true
     }
 
@@ -361,6 +366,9 @@ module.exports = async function (sock, msg) {
         const comandosValidos = [
 
             `${config.prefix}menu`,
+            `${config.prefix}menumembro`,
+            `${config.prefix}menumemb`,
+            `${config.prefix}menucomum`,
             `${config.prefix}menuadm`,
             `${config.prefix}menudono`,
             `${config.prefix}grupos`,

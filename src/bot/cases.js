@@ -826,7 +826,12 @@ module.exports = async function (sock, msg) {
   }
 
   if (text === config.prefix + 'menu') {
-    await menu(sock, msg, from)
+    await menu(sock, msg, from, sender)
+    return
+  }
+
+  if (text === config.prefix + 'menumembro' || text === config.prefix + 'menumemb' || text === config.prefix + 'menucomum') {
+    await menu(sock, msg, from, sender, { forceMember: true })
     return
   }
 
