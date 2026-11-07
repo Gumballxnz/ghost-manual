@@ -14,8 +14,9 @@ module.exports = async (sock, msg, from, sender, text) => {
   const isSubbotCmd = command === 'subbot' || command === 'subbots'
   const isConectCmd = command === 'conect' || command === 'conectar'
   const isDelSubbotCmd = command === 'delsubbot' || command === 'deletesubbot'
+  const isMeusGruposCmd = command === 'meusgrupos' || command === 'meusgruposub'
 
-  if (!isSubbotCmd && !isConectCmd && !isDelSubbotCmd) {
+  if (!isSubbotCmd && !isConectCmd && !isDelSubbotCmd && !isMeusGruposCmd) {
     return false
   }
 
@@ -45,6 +46,13 @@ module.exports = async (sock, msg, from, sender, text) => {
       ].join('\n')
     }, { quoted: msg })
     return true
+  }
+
+  // ==========================================
+  // COMANDO DIRETO: .meusgrupos
+  // ==========================================
+  if (isMeusGruposCmd) {
+    return await listarGruposSessoes(sock, msg, from, sender, args, isOwnerOrSubdono, prefix)
   }
 
   // ==========================================
@@ -213,6 +221,15 @@ module.exports = async (sock, msg, from, sender, text) => {
   }
 
   // ==========================================
+  // COMANDO: .subbot grupos [numero] / .subbot sessoes
+  // Dono vê todas as sessões e seus grupos.
+  // Dono da sessão vê apenas os grupos da sua sessão.
+  // ==========================================
+  if (subOpcao === 'grupos' || subOpcao === 'grupo' || subOpcao === 'sessao' || subOpcao === 'sessoes') {
+    return await listarGruposSessoes(sock, msg, from, sender, args, isOwnerOrSubdono, prefix)
+  }
+
+  // ==========================================
   // COMANDO DIRETO: .conect / .conectar <numero>
   // ==========================================
   if (isConectCmd) {
@@ -259,13 +276,16 @@ module.exports = async (sock, msg, from, sender, text) => {
 
   // 1. .subbot lista / .subbots / .subbot status
   if (!subOpcao || subOpcao === 'lista' || subOpcao === 'list' || subOpcao === 'status' || command === 'subbots') {
-    const lista = subbotManager.listarSubbots()
+    const lista = isOwnerOrSubdono
+      ? subbotManager.listarSubbots()
+      : subbotManager.getSubbotsDoUsuario(sender)
+
     if (!lista || lista.length === 0) {
       await sock.sendMessage(from, {
         text: [
           '╭┈⊰ 👻 『 *SISTEMA DE SUB-BOTS* 』',
           '┊',
-          '┊•.̇𖥨֗ℹ️⭟ *Nenhum sub-bot registrado no momento.*',
+          `┊•.̇𖥨֗ℹ️⭟ *${isOwnerOrSubdono ? 'Nenhum sub-bot registrado no momento.' : 'Você não possui nenhum sub-bot conectado.'}*`,
           '┊',
           `┊•.̇𖥨֗➕⭟ Digite *${prefix}conect <numero>* para conectar`,
           '┊      um chip secundário agora mesmo!',
@@ -276,7 +296,7 @@ module.exports = async (sock, msg, from, sender, text) => {
     }
 
     const linhas = [
-      '╭┈⊰ 👻 『 *SUB-BOTS ATIVOS & REGISTRADOS* 』',
+      `╭┈⊰ 👻 『 *${isOwnerOrSubdono ? 'SUB-BOTS ATIVOS & REGISTRADOS' : 'SEUS SUB-BOTS CONECTADOS'}* 』`,
       '┊'
     ]
 
@@ -291,10 +311,10 @@ module.exports = async (sock, msg, from, sender, text) => {
     }
 
     linhas.push(`┊•.̇𖥨֗💡⭟ *Comandos:*`)
-    linhas.push(`┊   • \`${prefix}conect <numero>\` › Conectar novo`)
-    linhas.push(`┊   • \`${prefix}subbot del <numero>\` › Remover`)
-    linhas.push(`┊   • \`${prefix}subbot vincular <numero>\` › Atrelar a este grupo`)
+    linhas.push(`┊   • \`${prefix}subbot grupos\` › Ver grupos autorizados`)
+    linhas.push(`┊   • \`${prefix}subbot vincular [numero]\` › Atrelar a este grupo`)
     linhas.push(`┊   • \`${prefix}subbot desvincular\` › Voltar para bot principal`)
+    linhas.push(`┊   • \`${prefix}subbot del <numero>\` › Remover sub-bot`)
     if (isOwnerOrSubdono) {
       linhas.push(`┊   • \`${prefix}subbot autorizar <numero>\` › Autorizar revendedor`)
       linhas.push(`┊   • \`${prefix}subbot autorizados\` › Ver lista de autorizados`)
@@ -335,14 +355,40 @@ module.exports = async (sock, msg, from, sender, text) => {
       await sock.sendMessage(from, { text: '❌ Este comando só pode ser usado dentro de um grupo.' }, { quoted: msg })
       return true
     }
-    const rawNumber = args[2]
+    let rawNumber = args[2]
+
+    // Se o revendedor não passou número, mas tem apenas 1 subbot dele, detecta automaticamente
+    if (!rawNumber && !isOwnerOrSubdono) {
+      const meus = subbotManager.getSubbotsDoUsuario(sender)
+      if (meus.length === 1) {
+        rawNumber = meus[0].numero
+      }
+    }
+
     if (!rawNumber) {
       await sock.sendMessage(from, {
-        text: `❌ *Informe o número do sub-bot.*\nExemplo: \`${prefix}subbot vincular 25884xxxxxxx\``
+        text: `❌ *Informe o número do sub-bot a ser vinculado.*\nExemplo: \`${prefix}subbot vincular 25884xxxxxxx\``
       }, { quoted: msg })
       return true
     }
+
     const numLimpo = rawNumber.replace(/\D/g, '')
+
+    // Se não for dono/subdono, verifica se a sessão pertence a ele
+    if (!isOwnerOrSubdono) {
+      const sub = subbotManager.dados.subbots?.[numLimpo]
+      if (!sub) {
+        await sock.sendMessage(from, { text: `❌ Sub-bot +${numLimpo} não encontrado.` }, { quoted: msg })
+        return true
+      }
+      const meus = subbotManager.getSubbotsDoUsuario(sender)
+      const ehDele = meus.some(s => s.numero === numLimpo)
+      if (!ehDele) {
+        await sock.sendMessage(from, { text: '⛔ Você só pode vincular grupos aos seus próprios sub-bots.' }, { quoted: msg })
+        return true
+      }
+    }
+
     subbotManager.vincularGrupo(numLimpo, from)
     await sock.sendMessage(from, {
       text: `✅ *Grupo Vinculado!*\n\n📱 Sub-Bot: *+${numLimpo}*\nEste grupo agora é atendido por este sub-bot.`
@@ -370,7 +416,8 @@ module.exports = async (sock, msg, from, sender, text) => {
     '┊•.̇𖥨֗🤖⭟ *Comandos disponíveis:*',
     `┊  • \`${prefix}conect <numero>\` › Conectar novo sub-bot`,
     `┊  • \`${prefix}subbots\` › Ver sub-bots online`,
-    `┊  • \`${prefix}subbot vincular <numero>\` › Atrelar a este grupo`,
+    `┊  • \`${prefix}subbot grupos\` › Ver grupos autorizados para a sessão`,
+    `┊  • \`${prefix}subbot vincular [numero]\` › Atrelar a este grupo`,
     `┊  • \`${prefix}subbot desvincular\` › Bot principal reassume`,
     `┊  • \`${prefix}subbot del <numero>\` › Remover sub-bot`
   ]
@@ -382,6 +429,153 @@ module.exports = async (sock, msg, from, sender, text) => {
   ajuda.push('╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯')
 
   await sock.sendMessage(from, { text: ajuda.join('\n') }, { quoted: msg })
+  return true
+}
+
+async function listarGruposSessoes(sock, msg, from, sender, args, isOwnerOrSubdono, prefix) {
+  const numeroFiltro = args[2] ? String(args[2]).replace(/\D/g, '') : ''
+
+  async function obterNomeGrupo(s, gid) {
+    try {
+      const { getGroupMetadataCached } = require('../../utils/baileys')
+      const meta = await getGroupMetadataCached(s, gid)
+      if (meta && meta.subject) return meta.subject
+    } catch {}
+    return 'Grupo WhatsApp'
+  }
+
+  // ==========================================
+  // 1. VISÃO DO DONO PRINCIPAL / SUBDONOS
+  // O dono vê TODAS as sessões e seus grupos
+  // ==========================================
+  if (isOwnerOrSubdono) {
+    let subbotsParaExibir = []
+
+    if (numeroFiltro) {
+      const sb = subbotManager.dados.subbots?.[numeroFiltro]
+      if (!sb) {
+        await sock.sendMessage(from, {
+          text: `❌ *Nenhuma sessão encontrada para o número +${numeroFiltro}.*`
+        }, { quoted: msg })
+        return true
+      }
+      subbotsParaExibir.push(sb)
+    } else {
+      subbotsParaExibir = Object.values(subbotManager.dados.subbots || {})
+    }
+
+    if (!subbotsParaExibir.length) {
+      await sock.sendMessage(from, {
+        text: 'ℹ️ *Nenhuma sessão de sub-bot cadastrada no momento.*'
+      }, { quoted: msg })
+      return true
+    }
+
+    const linhas = [
+      '╭┈⊰ 👻 『 *RELATÓRIO GERAL DE SESSÕES & GRUPOS* 』',
+      '┊',
+      '┊👑 *Acesso Administrativo (Dono do Bot)*',
+      `┊Total de Sessões: *${subbotsParaExibir.length}*`,
+      '┊'
+    ]
+
+    for (const sb of subbotsParaExibir) {
+      const active = subbotManager.activeSubbots.get(sb.numero)
+      const statusIcon = active?.status === 'online' ? '🟢 Online' : (sb.status === 'pareando' ? '🟡 Pareando' : '🔴 Offline')
+      const grupos = sb.grupos || []
+
+      linhas.push(`┊📱 *Sessão: +${sb.numero}* [${statusIcon}]`)
+      if (sb.criadoPor) {
+        const criadorClean = String(sb.criadoPor).split('@')[0].split(':')[0]
+        linhas.push(`┊👤 *Criador:* wa.me/${criadorClean}`)
+      }
+      linhas.push(`┊📂 *Grupos Atendidos:* ${grupos.length}`)
+
+      if (grupos.length === 0) {
+        linhas.push('┊  › _Nenhum grupo vinculado a este chip._')
+      } else {
+        for (let i = 0; i < grupos.length; i++) {
+          const gid = grupos[i]
+          const nome = await obterNomeGrupo(active?.sock || sock, gid)
+          linhas.push(`┊  ${i + 1}. 📌 *${nome}*`)
+          linhas.push(`┊     › \`${gid}\``)
+        }
+      }
+      linhas.push('┊')
+    }
+
+    linhas.push(`┊•.̇𖥨֗💡⭟ *Filtrar por sessão:* \`${prefix}subbot grupos <numero>\``)
+    linhas.push('╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯')
+
+    await sock.sendMessage(from, { text: linhas.join('\n') }, { quoted: msg })
+    return true
+  }
+
+  // ==========================================
+  // 2. VISÃO DO DONO DA SESSÃO (Revendedor)
+  // O revendedor vê APENAS os grupos da sua sessão
+  // ==========================================
+  const minhasSessoes = subbotManager.getSubbotsDoUsuario(sender)
+
+  if (!minhasSessoes || minhasSessoes.length === 0) {
+    await sock.sendMessage(from, {
+      text: [
+        '╭┈⊰ 👻 『 *SEUS GRUPOS VINCULADOS* 』',
+        '┊',
+        '┊•.̇𖥨֗ℹ️⭟ *Você ainda não possui nenhuma sessão de sub-bot criada.*',
+        `┊•.̇𖥨֗💡⭟ Conecte seu chip usando: \`${prefix}conect <seu_numero>\``,
+        '╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯'
+      ].join('\n')
+    }, { quoted: msg })
+    return true
+  }
+
+  let sessoesParaExibir = minhasSessoes
+  if (numeroFiltro) {
+    sessoesParaExibir = minhasSessoes.filter(s => s.numero === numeroFiltro)
+    if (!sessoesParaExibir.length) {
+      await sock.sendMessage(from, {
+        text: '⛔ *Acesso Restrito:* Você só tem permissão para visualizar os grupos pertencentes à sua própria sessão.'
+      }, { quoted: msg })
+      return true
+    }
+  }
+
+  const linhas = [
+    '╭┈⊰ 👻 『 *SEUS GRUPOS AUTORIZADOS* 』',
+    '┊'
+  ]
+
+  for (const sb of sessoesParaExibir) {
+    const active = subbotManager.activeSubbots.get(sb.numero)
+    const statusIcon = active?.status === 'online' ? '🟢 Online' : '🔴 Offline'
+    const grupos = sb.grupos || []
+
+    linhas.push(`┊📱 *Sua Sessão:* +${sb.numero} [${statusIcon}]`)
+    linhas.push(`┊📂 *Total de Grupos Vinculados:* ${grupos.length}`)
+    linhas.push('┊')
+
+    if (grupos.length === 0) {
+      linhas.push('┊•.̇𖥨֗ℹ️⭟ *Nenhum grupo vinculado a esta sessão ainda.*')
+      linhas.push(`┊      Para vincular um grupo, digite no grupo desejado:`)
+      linhas.push(`┊      \`${prefix}subbot vincular ${sb.numero}\``)
+    } else {
+      for (let i = 0; i < grupos.length; i++) {
+        const gid = grupos[i]
+        const nome = await obterNomeGrupo(active?.sock || sock, gid)
+        linhas.push(`┊•.̇𖥨֗📌⭟ *${i + 1}. ${nome}*`)
+        linhas.push(`┊      ID: \`${gid}\``)
+      }
+    }
+    linhas.push('┊')
+  }
+
+  linhas.push(`┊•.̇𖥨֗💡⭟ *Comandos:*`)
+  linhas.push(`┊   • \`${prefix}subbot vincular [numero]\` › Atrelar grupo atual`)
+  linhas.push(`┊   • \`${prefix}subbot desvincular\` › Desatrelar grupo atual`)
+  linhas.push('╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯')
+
+  await sock.sendMessage(from, { text: linhas.join('\n') }, { quoted: msg })
   return true
 }
 

@@ -548,6 +548,7 @@ module.exports = async function (sock, msg) {
             `${config.prefix}conect`,
             `${config.prefix}conectar`,
             `${config.prefix}delsubbot`,
+            `${config.prefix}meusgrupos`,
 
             `${config.prefix}suporte`
         ]

@@ -128,6 +128,39 @@ class SubbotManager {
     return this.activeSubbots.get(limpo) || null
   }
 
+  getSubbotsDoUsuario(sender) {
+    if (!sender) return []
+    const candidateKeys = typeof getSenderCandidateKeys === 'function'
+      ? getSenderCandidateKeys(sender)
+      : new Set([String(sender).split('@')[0].split(':')[0].replace(/\D/g, '')])
+
+    try {
+      const { buscarNumero } = require('./core')
+      const id = String(sender).split('@')[0].split(':')[0]
+      const numReal = buscarNumero(id)
+      if (numReal) {
+        candidateKeys.add(numReal)
+        candidateKeys.add(numReal + '@s.whatsapp.net')
+      }
+    } catch {}
+
+    const resultado = []
+    for (const [num, sb] of Object.entries(this.dados.subbots || {})) {
+      const numLimpo = String(num).replace(/\D/g, '')
+      const criadorLimpo = sb.criadoPor ? String(sb.criadoPor).split('@')[0].split(':')[0].replace(/\D/g, '') : ''
+
+      if (candidateKeys.has(numLimpo) || candidateKeys.has(sb.criadoPor) || (criadorLimpo && candidateKeys.has(criadorLimpo))) {
+        const active = this.activeSubbots.get(numLimpo)
+        resultado.push({
+          ...sb,
+          online: Boolean(active && active.status === 'online'),
+          status: active?.status || sb.status || 'offline'
+        })
+      }
+    }
+    return resultado
+  }
+
   getSubbotDoGrupo(groupId) {
     const num = this.groupToSubbot.get(groupId)
     if (!num) return null
