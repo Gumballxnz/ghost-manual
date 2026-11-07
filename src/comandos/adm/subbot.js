@@ -1,6 +1,6 @@
 const path = require('path')
 const config = require(path.join(__dirname, '../../../data/config.json'))
-const { isAdmin, isOwnerCheck, isLeaderCheck } = require('../../utils/baileys')
+const { isLeaderCheck, isSubdonoCheck } = require('../../utils/baileys')
 const subbotManager = require('../../bot/subbotManager')
 
 module.exports = async (sock, msg, from, sender, text) => {
@@ -20,22 +20,114 @@ module.exports = async (sock, msg, from, sender, text) => {
   }
 
   const isGroup = from.endsWith('@g.us')
-  const isOwner = isLeaderCheck(sender, msg) || isOwnerCheck(sender, msg)
-  let isAdm = false
+  const isOwnerOrSubdono = isLeaderCheck(sender, msg) || isSubdonoCheck(sender)
+  const isAutorizado = subbotManager.isAutorizado(sender, msg)
 
-  if (isGroup) {
-    try {
-      isAdm = await isAdmin(sock, from, sender)
-    } catch {
-      isAdm = false
-    }
+  // ==========================================
+  // CAMADA DE SEGURANÇA RESTRITA:
+  // Apenas Dono, Subdonos e Revendedores Autorizados
+  // Membros comuns e admins não autorizados são bloqueados.
+  // ==========================================
+  if (!isAutorizado) {
+    await sock.sendMessage(from, {
+      text: [
+        '╭┈⊰ 👻 『 *ACESSO RESTRITO* 』',
+        '┊',
+        '┊•.̇𖥨֗⛔⭟ *Você não tem permissão para gerenciar sub-bots.*',
+        '┊',
+        '┊•.̇𖥨֗🔒⭟ *Quem pode executar:*',
+        '┊   1. Dono do Bot',
+        '┊   2. Subdonos',
+        '┊   3. Revendedores / Usuários autorizados',
+        '┊',
+        '┊•.̇𖥨֗💡⭟ Solicite autorização ao Dono ou Subdono.',
+        '╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯'
+      ].join('\n')
+    }, { quoted: msg })
+    return true
   }
 
-  // Apenas donos e administradores do grupo podem gerenciar sub-bots
-  if (!isOwner && !isAdm) {
+  // ==========================================
+  // GESTÃO DE PERMISSÕES (Exclusivo Dono & Subdono):
+  // .subbot autorizar <numero>
+  // .subbot desautorizar <numero>
+  // .subbot autorizados
+  // ==========================================
+  const subOpcao = (args[1] || '').toLowerCase()
+
+  if (subOpcao === 'autorizar' || subOpcao === 'auth' || subOpcao === 'permitir') {
+    if (!isOwnerOrSubdono) {
+      await sock.sendMessage(from, {
+        text: '❌ *Apenas o Dono ou Subdono podem autorizar novos usuários.*'
+      }, { quoted: msg })
+      return true
+    }
+    const rawNumber = args[2]
+    if (!rawNumber) {
+      await sock.sendMessage(from, {
+        text: `❌ *Informe o número a ser autorizado.*\nExemplo: \`${prefix}subbot autorizar 25884xxxxxxx\``
+      }, { quoted: msg })
+      return true
+    }
+    try {
+      const numAuth = subbotManager.autorizarUsuario(rawNumber, sender)
+      await sock.sendMessage(from, {
+        text: `✅ *Usuário Autorizado!*\n\n📱 Número: *+${numAuth}*\nAgora este usuário tem permissão para usar \`${prefix}conect\` e gerenciar seus sub-bots.`
+      }, { quoted: msg })
+    } catch (e) {
+      await sock.sendMessage(from, { text: `❌ ${e.message}` }, { quoted: msg })
+    }
+    return true
+  }
+
+  if (subOpcao === 'desautorizar' || subOpcao === 'unauth' || subOpcao === 'revogar') {
+    if (!isOwnerOrSubdono) {
+      await sock.sendMessage(from, {
+        text: '❌ *Apenas o Dono ou Subdono podem desautorizar usuários.*'
+      }, { quoted: msg })
+      return true
+    }
+    const rawNumber = args[2]
+    if (!rawNumber) {
+      await sock.sendMessage(from, {
+        text: `❌ *Informe o número a desautorizar.*\nExemplo: \`${prefix}subbot desautorizar 25884xxxxxxx\``
+      }, { quoted: msg })
+      return true
+    }
+    const ok = subbotManager.desautorizarUsuario(rawNumber)
     await sock.sendMessage(from, {
-      text: '❌ *Apenas administradores do grupo ou o dono do bot podem gerenciar sub-bots.*'
+      text: ok
+        ? `🗑️ *Autorização revogada com sucesso para +${rawNumber.replace(/\D/g, '')}!*`
+        : `⚠️ *O número informado não constava na lista de autorizados.*`
     }, { quoted: msg })
+    return true
+  }
+
+  if (subOpcao === 'autorizados' || subOpcao === 'authlist') {
+    if (!isOwnerOrSubdono) {
+      await sock.sendMessage(from, {
+        text: '❌ *Apenas o Dono ou Subdono podem consultar a lista de autorizados.*'
+      }, { quoted: msg })
+      return true
+    }
+    const lista = subbotManager.listarAutorizados()
+    if (!lista.length) {
+      await sock.sendMessage(from, {
+        text: 'ℹ️ *Nenhum revendedor/usuário autorizado no momento.* Apenas Dono e Subdonos têm acesso.'
+      }, { quoted: msg })
+      return true
+    }
+    const linhas = [
+      '╭┈⊰ 👻 『 *REVENDEDORES / USUÁRIOS AUTORIZADOS* 』',
+      '┊'
+    ]
+    lista.forEach((u, idx) => {
+      linhas.push(`┊•.̇𖥨֗👤⭟ *#${idx + 1}:* +${u}`)
+    })
+    linhas.push('┊')
+    linhas.push(`┊•.̇𖥨֗💡⭟ Para revogar: \`${prefix}subbot desautorizar <numero>\``)
+    linhas.push('╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯')
+    await sock.sendMessage(from, { text: linhas.join('\n') }, { quoted: msg })
     return true
   }
 
@@ -77,13 +169,12 @@ module.exports = async (sock, msg, from, sender, text) => {
       }, { quoted: msg })
       return true
     }
-    return await executarRemoverSubbot(sock, msg, from, rawNumber)
+    return await executarRemoverSubbot(sock, msg, from, sender, rawNumber, isOwnerOrSubdono)
   }
 
   // ==========================================
   // SUBCOMANDOS: .subbot [opção]
   // ==========================================
-  const subOpcao = (args[1] || '').toLowerCase()
 
   // 1. .subbot lista / .subbots / .subbot status
   if (!subOpcao || subOpcao === 'lista' || subOpcao === 'list' || subOpcao === 'status' || command === 'subbots') {
@@ -123,6 +214,10 @@ module.exports = async (sock, msg, from, sender, text) => {
     linhas.push(`┊   • \`${prefix}subbot del <numero>\` › Remover`)
     linhas.push(`┊   • \`${prefix}subbot vincular <numero>\` › Atrelar a este grupo`)
     linhas.push(`┊   • \`${prefix}subbot desvincular\` › Voltar para bot principal`)
+    if (isOwnerOrSubdono) {
+      linhas.push(`┊   • \`${prefix}subbot autorizar <numero>\` › Autorizar revendedor`)
+      linhas.push(`┊   • \`${prefix}subbot autorizados\` › Ver lista de autorizados`)
+    }
     linhas.push('╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯')
 
     await sock.sendMessage(from, { text: linhas.join('\n') }, { quoted: msg })
@@ -150,7 +245,7 @@ module.exports = async (sock, msg, from, sender, text) => {
       }, { quoted: msg })
       return true
     }
-    return await executarRemoverSubbot(sock, msg, from, rawNumber)
+    return await executarRemoverSubbot(sock, msg, from, sender, rawNumber, isOwnerOrSubdono)
   }
 
   // 4. .subbot vincular [numero] (vincula o grupo atual ao sub-bot)
@@ -188,19 +283,24 @@ module.exports = async (sock, msg, from, sender, text) => {
   }
 
   // Ajuda padrão
-  await sock.sendMessage(from, {
-    text: [
-      '╭┈⊰ 👻 『 *SISTEMA DE SUB-BOTS* 』',
-      '┊',
-      '┊•.̇𖥨֗🤖⭟ *Comandos disponíveis:*',
-      `┊  • \`${prefix}conect <numero>\` › Conectar novo sub-bot`,
-      `┊  • \`${prefix}subbots\` › Ver sub-bots online`,
-      `┊  • \`${prefix}subbot vincular <numero>\` › Atrelar a este grupo`,
-      `┊  • \`${prefix}subbot desvincular\` › Bot principal reassume`,
-      `┊  • \`${prefix}subbot del <numero>\` › Remover sub-bot`,
-      '╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯'
-    ].join('\n')
-  }, { quoted: msg })
+  const ajuda = [
+    '╭┈⊰ 👻 『 *SISTEMA DE SUB-BOTS* 』',
+    '┊',
+    '┊•.̇𖥨֗🤖⭟ *Comandos disponíveis:*',
+    `┊  • \`${prefix}conect <numero>\` › Conectar novo sub-bot`,
+    `┊  • \`${prefix}subbots\` › Ver sub-bots online`,
+    `┊  • \`${prefix}subbot vincular <numero>\` › Atrelar a este grupo`,
+    `┊  • \`${prefix}subbot desvincular\` › Bot principal reassume`,
+    `┊  • \`${prefix}subbot del <numero>\` › Remover sub-bot`
+  ]
+  if (isOwnerOrSubdono) {
+    ajuda.push(`┊  • \`${prefix}subbot autorizar <numero>\` › Autorizar revendedor`)
+    ajuda.push(`┊  • \`${prefix}subbot desautorizar <numero>\` › Revogar permissão`)
+    ajuda.push(`┊  • \`${prefix}subbot autorizados\` › Listar autorizados`)
+  }
+  ajuda.push('╰─┈┈┈┈┈◜❁◞┈┈┈┈┈─╯')
+
+  await sock.sendMessage(from, { text: ajuda.join('\n') }, { quoted: msg })
   return true
 }
 
@@ -288,8 +388,22 @@ async function executarConexaoSubbot(sock, msg, from, sender, rawNumber, prefix)
   return true
 }
 
-async function executarRemoverSubbot(sock, msg, from, rawNumber) {
+async function executarRemoverSubbot(sock, msg, from, sender, rawNumber, isOwnerOrSubdono) {
   const cleanNumber = String(rawNumber).replace(/\D/g, '')
+  const subbot = subbotManager.dados.subbots?.[cleanNumber]
+
+  // Se for usuário autorizado (revendedor), ele só pode deletar o sub-bot se ele mesmo criou
+  if (!isOwnerOrSubdono && subbot && subbot.criadoPor) {
+    const senderClean = String(sender).split('@')[0].split(':')[0].replace(/\D/g, '')
+    const criadorClean = String(subbot.criadoPor).split('@')[0].split(':')[0].replace(/\D/g, '')
+    if (senderClean !== criadorClean) {
+      await sock.sendMessage(from, {
+        text: '❌ *Você só tem permissão para remover os sub-bots criados por você.*'
+      }, { quoted: msg })
+      return true
+    }
+  }
+
   await subbotManager.desconectarSubbot(cleanNumber, true)
   await sock.sendMessage(from, {
     text: `🗑️ *Sub-Bot +${cleanNumber} desconectado e removido com sucesso!*\n\nO bot principal reassumiu o atendimento de qualquer grupo que estava atrelado a ele.`

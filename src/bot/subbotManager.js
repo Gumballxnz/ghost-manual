@@ -8,7 +8,7 @@ const {
   useMultiFileAuthState,
   fetchLatestBaileysVersion
 } = require('@whiskeysockets/baileys')
-const { getGroupMetadataCached } = require('../utils/baileys')
+const { getGroupMetadataCached, isLeaderCheck, isSubdonoCheck, getSenderCandidateKeys } = require('../utils/baileys')
 const { limparArquivosSessao } = require('../utils/sessionPruner')
 const MessageQueue = require('../utils/queue')
 
@@ -32,16 +32,17 @@ class SubbotManager {
   carregarDados() {
     try {
       if (!fs.existsSync(DATA_FILE)) {
-        this.dados = { subbots: {} }
+        this.dados = { subbots: {}, autorizados: [] }
         this.salvarDados()
       } else {
         const raw = fs.readFileSync(DATA_FILE, 'utf8')
         this.dados = JSON.parse(raw)
         if (!this.dados.subbots) this.dados.subbots = {}
+        if (!Array.isArray(this.dados.autorizados)) this.dados.autorizados = []
       }
     } catch (e) {
       console.error('[SUBBOTS] Erro ao carregar subbots.json:', e.message)
-      this.dados = { subbots: {} }
+      this.dados = { subbots: {}, autorizados: [] }
     }
   }
 
@@ -53,6 +54,61 @@ class SubbotManager {
     } catch (e) {
       console.error('[SUBBOTS] Erro ao salvar subbots.json:', e.message)
     }
+  }
+
+  isAutorizado(sender, msg = null) {
+    if (!sender) return false
+    // 1. Mensagens do próprio bot ou Dono principal
+    if (isLeaderCheck(sender, msg)) return true
+
+    // 2. Subdonos registrados no bot
+    if (isSubdonoCheck(sender)) return true
+
+    // 3. Usuários autorizados explicitamente pelo dono/subdono
+    const autorizados = this.dados.autorizados || []
+    if (autorizados.length > 0) {
+      const candidateKeys = typeof getSenderCandidateKeys === 'function'
+        ? getSenderCandidateKeys(sender)
+        : new Set([String(sender).split('@')[0].split(':')[0].replace(/\D/g, '')])
+
+      for (const aut of autorizados) {
+        const autLimpo = String(aut).replace(/\D/g, '')
+        if (candidateKeys.has(aut) || candidateKeys.has(autLimpo) || candidateKeys.has(aut + '@s.whatsapp.net')) {
+          return true
+        }
+      }
+    }
+
+    return false
+  }
+
+  autorizarUsuario(numero, porQuem = '') {
+    const limpo = this.normalizarNumero(numero)
+    if (!limpo || limpo.length < 8) {
+      throw new Error('Número inválido para autorização. Informe com DDI (ex: 25884xxxxxxx).')
+    }
+    if (!Array.isArray(this.dados.autorizados)) this.dados.autorizados = []
+    if (!this.dados.autorizados.includes(limpo)) {
+      this.dados.autorizados.push(limpo)
+      this.salvarDados()
+    }
+    return limpo
+  }
+
+  desautorizarUsuario(numero) {
+    const limpo = this.normalizarNumero(numero)
+    if (!Array.isArray(this.dados.autorizados)) return false
+    const antes = this.dados.autorizados.length
+    this.dados.autorizados = this.dados.autorizados.filter(a => String(a).replace(/\D/g, '') !== limpo)
+    if (this.dados.autorizados.length !== antes) {
+      this.salvarDados()
+      return true
+    }
+    return false
+  }
+
+  listarAutorizados() {
+    return this.dados.autorizados || []
   }
 
   normalizarNumero(numero) {
